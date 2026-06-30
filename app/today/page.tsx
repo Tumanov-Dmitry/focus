@@ -18,7 +18,7 @@ export default async function TodayPage() {
           description="Только важное: несколько задач, короткие контексты и одна строка для быстрого ввода."
         />
         <SectionLabel>В фокусе</SectionLabel>
-        <div className="mb-8 rounded-2xl border border-border/70 bg-card/40 px-5">
+        <div className="mb-8 rounded-xl border bg-card px-5">
           {tasks.map((task) => (
             <TaskRow key={task.id} {...task} />
           ))}
