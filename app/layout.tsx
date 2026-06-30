@@ -1,17 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Inter } from "next/font/google";
+import { Geist } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import { cn } from "@/lib/utils";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
-const sans = Inter({
-  subsets: ["latin", "cyrillic"],
-  variable: "--font-sans",
-});
-
-const heading = Geist({
+const geist = Geist({
   subsets: ["latin"],
-  variable: "--font-heading",
+  variable: "--font-geist-sans",
 });
 
 export const metadata: Metadata = {
@@ -21,10 +16,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ru" className={cn("dark", sans.variable, heading.variable)}>
-      <body>
-        <Toaster />
-        {children}
+    <html lang="ru" className={`dark ${geist.variable}`}>
+      <body className={geist.className}>
+        <TooltipProvider>
+          <Toaster />
+          {children}
+        </TooltipProvider>
       </body>
     </html>
   );

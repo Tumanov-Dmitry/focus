@@ -22,11 +22,14 @@ const swatches = [
 const themeSettings = [
   { label: "Стиль", value: "Maia" },
   { label: "Базовый цвет", value: "Neutral" },
-  { label: "Тема", value: "Neutral Dark" },
-  { label: "Заголовки", value: "Geist" },
-  { label: "Интерфейс", value: "Inter" },
+  { label: "Тема", value: "Neutral" },
+  { label: "Цвет графиков", value: "Neutral" },
+  { label: "Заголовки", value: "Inherit" },
+  { label: "Шрифт", value: "Geist" },
   { label: "Радиус", value: "Medium" },
   { label: "Иконки", value: "Lucide" },
+  { label: "Меню", value: "Default" },
+  { label: "Акцент меню", value: "Subtle" },
 ];
 
 export default function DesignSystemPage() {
@@ -78,7 +81,7 @@ export default function DesignSystemPage() {
             <div className="space-y-4">
               <h2 className="font-heading text-hero font-semibold">Geist для ясной иерархии</h2>
               <p className="text-lead text-muted-foreground">
-                Inter сохраняет плотный продуктовый ритм и остаётся спокойным на длинных строках.
+                Geist задаёт единый продуктовый ритм, а заголовки наследуют основной шрифт preset.
               </p>
               <p className="text-caption text-muted-foreground">Caption / подпись / вторичный контекст</p>
             </div>
