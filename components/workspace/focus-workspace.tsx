@@ -9,7 +9,6 @@ import {
   BriefcaseBusiness,
   CalendarDays,
   CircleUserRound,
-  FileText,
   FolderKanban,
   Gauge,
   Menu,
@@ -20,9 +19,8 @@ import {
   Sparkles,
   Target,
   UsersRound,
-  WalletCards,
 } from "lucide-react";
-import { type CSSProperties, useState } from "react";
+import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,14 +39,12 @@ const levels: Array<{ id: WorkspaceLevel; label: string }> = [
 ];
 
 const railItems = [
-  { label: "Финансы", icon: WalletCards, group: "personal", rotation: -4.5, offset: 10 },
-  { label: "Документы", icon: FileText, group: "personal", rotation: 3, offset: 2 },
-  { label: "Фокус", icon: Target, group: "work", rotation: -2.5, offset: 8 },
-  { label: "Задачи", icon: CalendarDays, group: "work", rotation: 4, offset: 0 },
-  { label: "Проекты", icon: FolderKanban, group: "work", rotation: -4, offset: 12 },
-  { label: "Клиенты", icon: UsersRound, group: "work", rotation: 2.5, offset: 4 },
-  { label: "Аналитика", icon: BarChart3, group: "work", rotation: -3, offset: 9 },
-  { label: "Заметки", icon: NotebookPen, group: "work", rotation: 3.5, offset: 1 },
+  { label: "Фокус", icon: Target },
+  { label: "Задачи", icon: CalendarDays },
+  { label: "Проекты", icon: FolderKanban },
+  { label: "Клиенты", icon: UsersRound },
+  { label: "Аналитика", icon: BarChart3 },
+  { label: "Заметки", icon: NotebookPen },
 ];
 
 function LeftRail() {
@@ -57,10 +53,9 @@ function LeftRail() {
       className="workspace-rail fixed left-5 top-1/2 z-30 hidden -translate-y-1/2 py-8 lg:block"
       aria-label="Разделы рабочего пространства"
     >
-      <div className="flex w-36 flex-col items-start gap-2">
-        {railItems.map((item, index) => {
+      <div className="workspace-rail-stack flex w-36 flex-col items-start gap-2">
+        {railItems.map((item) => {
           const Icon = item.icon;
-          const previousGroup = index > 0 ? railItems[index - 1].group : null;
 
           return (
             <Button
@@ -68,16 +63,9 @@ function LeftRail() {
               variant={item.label === "Фокус" ? "secondary" : "ghost"}
               size="sm"
               className={cn(
-                "workspace-rail-item h-8 justify-start gap-2 rounded-md border border-transparent bg-background/78 px-2.5 text-xs text-muted-foreground shadow-sm backdrop-blur-md transition-[transform,color,background-color,border-color] duration-500 ease-out hover:border-border hover:bg-background hover:text-foreground",
+                "h-8 w-28 justify-start gap-2 rounded-md border border-transparent bg-background/78 px-2.5 text-xs text-muted-foreground shadow-sm backdrop-blur-md transition-colors duration-300 hover:border-border hover:bg-background hover:text-foreground",
                 item.label === "Фокус" && "border-border bg-background text-foreground",
-                previousGroup && previousGroup !== item.group && "mt-4",
               )}
-              style={
-                {
-                  "--rail-x": `${item.offset}px`,
-                  "--rail-r": `${item.rotation}deg`,
-                } as CSSProperties
-              }
             >
               <Icon className="size-3.5" />
               {item.label}
