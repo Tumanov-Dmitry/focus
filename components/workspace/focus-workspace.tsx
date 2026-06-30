@@ -306,40 +306,40 @@ export function FocusWorkspace({ tasks }: { tasks: FocusTask[] }) {
       <div className="workspace-progressive-blur workspace-progressive-blur--bottom" aria-hidden="true" />
 
       <main className="min-h-screen px-4 sm:px-8 lg:pl-48">
-        <AnimatePresence initial={false} mode="wait" custom={direction}>
-          <motion.div
-            key={activeLevel}
-            custom={direction}
-            variants={{
-              initial: (value: number) => ({
-                opacity: 0,
-                y: reduceMotion ? 0 : value * 64,
-                scale: reduceMotion ? 1 : 0.985,
-                filter: reduceMotion ? "blur(0px)" : "blur(18px)",
-              }),
-              animate: {
-                opacity: 1,
-                y: 0,
-                scale: 1,
-                filter: "blur(0px)",
-              },
-              exit: (value: number) => ({
-                opacity: 0,
-                y: reduceMotion ? 0 : value * -64,
-                scale: reduceMotion ? 1 : 0.985,
-                filter: reduceMotion ? "blur(0px)" : "blur(18px)",
-              }),
-            }}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: reduceMotion ? 0.01 : 0.48, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {activeLevel === "desk" ? <DeskLevel /> : null}
-            {activeLevel === "focus" ? <FocusLevel tasks={tasks} /> : null}
-            {activeLevel === "plan" ? <PlanLevel /> : null}
-          </motion.div>
-        </AnimatePresence>
+        <div className="grid min-h-screen">
+          <AnimatePresence initial={false} mode="sync" custom={direction}>
+            <motion.div
+              key={activeLevel}
+              custom={direction}
+              className="col-start-1 row-start-1 min-h-screen origin-center"
+              variants={{
+                initial: (value: number) => ({
+                  opacity: 0,
+                  scale: reduceMotion ? 1 : value > 0 ? 0.82 : 1.18,
+                  filter: reduceMotion ? "blur(0px)" : "blur(16px)",
+                }),
+                animate: {
+                  opacity: 1,
+                  scale: 1,
+                  filter: "blur(0px)",
+                },
+                exit: (value: number) => ({
+                  opacity: 0,
+                  scale: reduceMotion ? 1 : value > 0 ? 1.18 : 0.82,
+                  filter: reduceMotion ? "blur(0px)" : "blur(16px)",
+                }),
+              }}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: reduceMotion ? 0.01 : 0.56, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {activeLevel === "desk" ? <DeskLevel /> : null}
+              {activeLevel === "focus" ? <FocusLevel tasks={tasks} /> : null}
+              {activeLevel === "plan" ? <PlanLevel /> : null}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </main>
 
       <AiDock />
