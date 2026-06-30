@@ -165,4 +165,48 @@
   .focus-surface {
     @apply border border-border bg-card shadow-soft;
   }
+
+  .workspace-rail-item {
+    transform: translateX(var(--rail-x)) rotate(var(--rail-r));
+  }
+
+  .workspace-rail:hover .workspace-rail-item {
+    transform: translateX(0) rotate(0);
+  }
+
+  .workspace-progressive-blur {
+    pointer-events: none;
+    position: fixed;
+    right: 0;
+    left: 0;
+    z-index: 20;
+    height: 120px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .workspace-progressive-blur--top {
+    top: 0;
+    background: linear-gradient(
+      to bottom,
+      oklch(0.965 0 0) 0%,
+      oklch(0.965 0 0 / 0.96) 28%,
+      oklch(0.965 0 0 / 0.72) 58%,
+      oklch(0.965 0 0 / 0) 100%
+    );
+    mask-image: linear-gradient(to bottom, black 0%, black 42%, transparent 100%);
+  }
+
+  .workspace-progressive-blur--bottom {
+    bottom: 0;
+    height: 148px;
+    background: linear-gradient(
+      to top,
+      oklch(0.965 0 0) 0%,
+      oklch(0.965 0 0 / 0.98) 32%,
+      oklch(0.965 0 0 / 0.76) 64%,
+      oklch(0.965 0 0 / 0) 100%
+    );
+    mask-image: linear-gradient(to top, black 0%, black 48%, transparent 100%);
+  }
 }
