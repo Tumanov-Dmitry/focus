@@ -1,6 +1,6 @@
 import { hasSupabasePublicEnv } from "@/lib/config/env";
-import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
+import { createClient } from "@/lib/supabase/server";
 
 export type FocusTask = {
   id: string;
@@ -12,16 +12,20 @@ export type FocusTask = {
 type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
 
 const mockTodayTasks: FocusTask[] = [
-  { id: "mock-1", title: "Собрать короткий список задач для MVP", meta: "Сегодня · 25 минут" },
-  { id: "mock-2", title: "Описать первый сценарий AI-ввода", meta: "После обеда" },
-  { id: "mock-3", title: "Проверить структуру проектов и библиотеки", meta: "Низкий шум" },
+  { id: "mock-1", title: "Название задачи", meta: "Сегодня · 25 минут" },
+  { id: "mock-2", title: "Название задачи", meta: "После обеда" },
+  { id: "mock-3", title: "Название задачи", meta: "Низкий шум" },
   { id: "mock-4", title: "Закрыть день коротким обзором", meta: "Вечер" },
 ];
 
 function formatTaskMeta(task: TaskRow) {
   const dateLabel = task.due_on ? "Сегодня" : "Без даты";
   const energyLabel =
-    task.energy === "low" ? "низкая энергия" : task.energy === "high" ? "высокая энергия" : "средняя энергия";
+    task.energy === "low"
+      ? "низкая энергия"
+      : task.energy === "high"
+        ? "высокая энергия"
+        : "средняя энергия";
 
   return `${dateLabel} · ${energyLabel}`;
 }
