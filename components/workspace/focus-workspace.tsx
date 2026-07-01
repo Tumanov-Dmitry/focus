@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { WeeklyPlanner } from "@/components/workspace/weekly-planner";
 import { cn } from "@/lib/utils";
 import type { FocusTask } from "@/lib/data/tasks";
 
@@ -83,6 +84,17 @@ function WorkspaceChrome({
   activeLevel: WorkspaceLevel;
   onLevelChange: (level: WorkspaceLevel) => void;
 }) {
+  const currentDate = new Date();
+  const datePart = new Intl.DateTimeFormat("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })
+    .format(currentDate)
+    .replace(" г.", "");
+  const weekday = new Intl.DateTimeFormat("ru-RU", { weekday: "long" }).format(currentDate);
+  const dateLabel = `${datePart}, ${weekday}`;
+
   return (
     <>
       <div className="fixed left-5 top-5 z-40 flex items-center rounded-full border bg-background/92 p-1 shadow-sm backdrop-blur-xl">
@@ -136,7 +148,7 @@ function WorkspaceChrome({
       </nav>
 
       <p className="pointer-events-none fixed left-1/2 top-[145px] z-40 -translate-x-1/2 whitespace-nowrap text-xs text-muted-foreground sm:top-[84px]">
-        30 июня 2026, вторник
+        {dateLabel}
       </p>
     </>
   );
@@ -236,30 +248,6 @@ function DeskLevel() {
   );
 }
 
-function PlanLevel() {
-  const days = ["Пн", "Вт", "Ср", "Чт", "Пт"];
-
-  return (
-    <section className="mx-auto w-full max-w-5xl pb-40 pt-40 sm:pt-28">
-      <Card className="overflow-x-auto bg-card/92 py-0">
-        <CardContent className="grid min-h-96 min-w-[720px] grid-cols-5 divide-x p-0">
-          {days.map((day, index) => (
-            <div key={day} className="p-4">
-              <p className="text-xs text-muted-foreground">{day}</p>
-              <p className="mt-1 text-lg font-semibold">{29 + index}</p>
-              {index === 1 || index === 3 ? (
-                <div className="mt-8 rounded-lg border bg-muted/60 p-3 text-xs leading-5">
-                  {index === 1 ? "Прототип первого экрана" : "Разбор задач недели"}
-                </div>
-              ) : null}
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-    </section>
-  );
-}
-
 function AiDock() {
   return (
     <div className="fixed bottom-5 left-1/2 z-40 w-[min(372px,calc(100vw-32px))] -translate-x-1/2">
@@ -303,13 +291,13 @@ export function FocusWorkspace({ tasks }: { tasks: FocusTask[] }) {
       <div className="workspace-progressive-blur workspace-progressive-blur--top" aria-hidden="true" />
       <div className="workspace-progressive-blur workspace-progressive-blur--bottom" aria-hidden="true" />
 
-      <main className="min-h-screen px-4 sm:px-8">
-        <div className="grid min-h-screen">
+      <main className="min-h-screen min-w-0 px-4 sm:px-8">
+        <div className="grid min-h-screen min-w-0">
           <AnimatePresence initial={false} mode="sync" custom={direction}>
             <motion.div
               key={activeLevel}
               custom={direction}
-              className="col-start-1 row-start-1 min-h-screen origin-center"
+              className="col-start-1 row-start-1 min-h-screen min-w-0 origin-center"
               variants={{
                 initial: (value: number) => ({
                   opacity: 0,
@@ -334,7 +322,7 @@ export function FocusWorkspace({ tasks }: { tasks: FocusTask[] }) {
             >
               {activeLevel === "desk" ? <DeskLevel /> : null}
               {activeLevel === "focus" ? <FocusLevel tasks={tasks} /> : null}
-              {activeLevel === "plan" ? <PlanLevel /> : null}
+              {activeLevel === "plan" ? <WeeklyPlanner tasks={tasks} /> : null}
             </motion.div>
           </AnimatePresence>
         </div>
