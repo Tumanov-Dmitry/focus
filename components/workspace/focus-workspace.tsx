@@ -159,7 +159,7 @@ function TaskCard({ task, index }: { task: FocusTask; index: number }) {
     <Card className="rounded-[20px] bg-card py-0 ring-1 ring-border shadow-[0_16px_36px_-24px_rgb(0_0_0/0.32)]">
       <CardContent className="p-[14px]">
         <div className="mb-2 flex items-center justify-between gap-3">
-          <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-[#d96c78]">
+          <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-destructive/70">
             <Sparkles className="size-3" />
             {index === 0 ? "ЭТЕШЕН · Прототип" : "ЭТЕШЕН"}
           </span>

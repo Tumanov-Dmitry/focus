@@ -40,10 +40,10 @@ const taskTones: PlannedTask["tone"][] = ["rose", "blue", "sand", "mint"];
 const plannerStorageKey = "focus-weekly-planner-v1";
 
 const toneClasses: Record<PlannedTask["tone"], string> = {
-  rose: "border-[#e7c7cb] bg-[#f2dcdf] text-[#5d3439]",
-  blue: "border-[#c9d8e4] bg-[#dce8f1] text-[#304b5f]",
-  sand: "border-[#dfd2bd] bg-[#eee3d1] text-[#574834]",
-  mint: "border-[#c8ddd1] bg-[#dcebe2] text-[#355244]",
+  rose: "border-border bg-chart-1/40 text-foreground",
+  blue: "border-border bg-chart-2/10 text-foreground",
+  sand: "border-border bg-chart-3/10 text-foreground",
+  mint: "border-border bg-chart-4/10 text-foreground",
 };
 
 function startOfWeek(value: Date) {
@@ -319,7 +319,7 @@ export function WeeklyPlanner({ tasks }: { tasks: FocusTask[] }) {
 
   return (
     <section className="mx-auto min-w-0 w-full max-w-[1024px] pb-40 pt-[188px] sm:pt-[124px]">
-      <Card className="w-full min-w-0 overflow-hidden rounded-[24px] border-border/80 bg-card/96 py-0 shadow-[0_24px_72px_-40px_rgb(0_0_0/0.35)]">
+      <Card className="w-full min-w-0 overflow-hidden rounded-[24px] border-border/80 bg-card/96 py-0 shadow-soft">
         <CardContent className="p-0">
           <header className="flex flex-col gap-4 border-b px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-center gap-3">
@@ -491,7 +491,7 @@ export function WeeklyPlanner({ tasks }: { tasks: FocusTask[] }) {
                                 </button>
                                 <button
                                   type="button"
-                                  className="flex h-full w-7 shrink-0 cursor-ew-resize touch-none items-center justify-center rounded-r-[16px] border-l border-current/10 bg-white/15 opacity-55 transition-opacity hover:opacity-100"
+                                  className="flex h-full w-7 shrink-0 cursor-ew-resize touch-none items-center justify-center rounded-r-[16px] border-l border-current/10 bg-background/20 opacity-55 transition-opacity hover:opacity-100"
                                   onPointerDown={(event) => beginAction(event, task, "resize")}
                                   onKeyDown={(event) => handleTaskKeyDown(event, task, "resize")}
                                   aria-label={`Изменить длительность задачи «${task.title}»`}
