@@ -53,22 +53,32 @@ function LeftRail() {
       className="workspace-rail fixed left-5 top-1/2 z-30 hidden -translate-y-1/2 py-8 lg:block"
       aria-label="Разделы рабочего пространства"
     >
-      <div className="workspace-rail-stack flex w-36 flex-col items-start gap-2">
+      <div className="workspace-rail-stack flex w-40 flex-col items-start gap-2.5">
         {railItems.map((item) => {
           const Icon = item.icon;
+          const isActive = item.label === "Фокус";
 
           return (
             <Button
               key={item.label}
-              variant={item.label === "Фокус" ? "secondary" : "ghost"}
+              variant="ghost"
               size="sm"
               className={cn(
-                "h-8 w-24 justify-start gap-2 rounded-lg border border-transparent bg-background/82 px-2.5 text-xs text-muted-foreground shadow-sm backdrop-blur-md transition-colors duration-300 hover:border-border hover:bg-background hover:text-foreground",
-                item.label === "Фокус" && "border-border bg-background text-foreground",
+                "group h-10 w-28 justify-start rounded-full border border-transparent px-3.5 text-sm backdrop-blur-md transition-colors duration-300",
+                isActive
+                  ? "border-border/80 bg-background text-foreground shadow-sm hover:bg-background"
+                  : "bg-background/10 text-muted-foreground shadow-none hover:bg-background/10 hover:text-muted-foreground",
               )}
             >
-              <Icon className="size-3.5" />
-              {item.label}
+              <span
+                className={cn(
+                  "flex items-center gap-2.5 transition-opacity duration-300",
+                  !isActive && "opacity-55 group-hover:opacity-100",
+                )}
+              >
+                <Icon className="size-4" />
+                {item.label}
+              </span>
             </Button>
           );
         })}
