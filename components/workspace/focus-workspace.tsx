@@ -5,7 +5,6 @@ import {
   ArrowUp,
   BarChart3,
   Bell,
-  Bot,
   BriefcaseBusiness,
   CalendarDays,
   CircleUserRound,
@@ -63,7 +62,7 @@ function LeftRail() {
               variant={item.label === "Фокус" ? "secondary" : "ghost"}
               size="sm"
               className={cn(
-                "h-8 w-28 justify-start gap-2 rounded-md border border-transparent bg-background/78 px-2.5 text-xs text-muted-foreground shadow-sm backdrop-blur-md transition-colors duration-300 hover:border-border hover:bg-background hover:text-foreground",
+                "h-8 w-24 justify-start gap-2 rounded-lg border border-transparent bg-background/82 px-2.5 text-xs text-muted-foreground shadow-sm backdrop-blur-md transition-colors duration-300 hover:border-border hover:bg-background hover:text-foreground",
                 item.label === "Фокус" && "border-border bg-background text-foreground",
               )}
             >
@@ -87,11 +86,11 @@ function WorkspaceChrome({
   return (
     <>
       <div className="fixed left-5 top-5 z-40 flex items-center rounded-full border bg-background/92 p-1 shadow-sm backdrop-blur-xl">
-        <Button variant="ghost" size="icon-sm" className="rounded-full" aria-label="Профиль">
-          <CircleUserRound className="size-4" />
+        <Button variant="ghost" size="icon-lg" className="rounded-full" aria-label="Профиль">
+          <CircleUserRound className="size-5" />
         </Button>
-        <Button variant="ghost" size="icon-sm" className="rounded-full" aria-label="Открыть меню">
-          <Menu className="size-4" />
+        <Button variant="ghost" size="icon-lg" className="rounded-full" aria-label="Открыть меню">
+          <Menu className="size-5" />
         </Button>
       </div>
 
@@ -99,18 +98,18 @@ function WorkspaceChrome({
         <Button
           variant="outline"
           size="sm"
-          className="hidden h-9 w-32 justify-start rounded-full bg-background/92 text-muted-foreground shadow-sm backdrop-blur-xl sm:flex"
+          className="hidden h-12 w-36 justify-start rounded-full bg-background/92 px-4 text-sm text-muted-foreground shadow-sm backdrop-blur-xl sm:flex"
         >
-          <Search className="size-4" />
+          <Search className="size-5" />
           Поиск
         </Button>
-        <Button variant="outline" size="icon" className="rounded-full bg-background/92 shadow-sm backdrop-blur-xl" aria-label="Уведомления">
-          <Bell className="size-4" />
+        <Button variant="outline" size="icon-lg" className="size-12 rounded-full bg-background/92 shadow-sm backdrop-blur-xl" aria-label="Уведомления">
+          <Bell className="size-5" />
         </Button>
       </div>
 
       <nav
-        className="fixed left-1/2 top-5 z-40 flex -translate-x-1/2 rounded-full bg-muted/78 p-1 shadow-inner backdrop-blur-xl"
+        className="fixed left-1/2 top-20 z-40 flex -translate-x-1/2 rounded-full bg-muted p-1 shadow-inner sm:top-5"
         aria-label="Уровень рабочего пространства"
       >
         {levels.map((level) => (
@@ -120,7 +119,7 @@ function WorkspaceChrome({
             size="sm"
             onClick={() => onLevelChange(level.id)}
             className={cn(
-              "relative h-8 min-w-16 rounded-full px-4 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground",
+              "relative h-9 min-w-20 rounded-full px-4 text-[13px] text-muted-foreground hover:bg-transparent hover:text-foreground sm:h-10 sm:min-w-24 sm:px-5",
               activeLevel === level.id && "text-foreground",
             )}
           >
@@ -135,16 +134,20 @@ function WorkspaceChrome({
           </Button>
         ))}
       </nav>
+
+      <p className="pointer-events-none fixed left-1/2 top-[145px] z-40 -translate-x-1/2 whitespace-nowrap text-xs text-muted-foreground sm:top-[84px]">
+        30 июня 2026, вторник
+      </p>
     </>
   );
 }
 
 function TaskCard({ task, index }: { task: FocusTask; index: number }) {
   return (
-    <Card className="border-border/80 bg-card/96 py-0 shadow-[0_14px_38px_-28px_oklch(0_0_0/0.62)]">
-      <CardContent className="p-4">
+    <Card className="rounded-[20px] bg-card py-0 ring-1 ring-border shadow-[0_16px_36px_-24px_rgb(0_0_0/0.32)]">
+      <CardContent className="p-[14px]">
         <div className="mb-2 flex items-center justify-between gap-3">
-          <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.04em] text-rose-500">
+          <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-[#d96c78]">
             <Sparkles className="size-3" />
             {index === 0 ? "ЭТЕШЕН · Прототип" : "ЭТЕШЕН"}
           </span>
@@ -155,7 +158,7 @@ function TaskCard({ task, index }: { task: FocusTask; index: number }) {
 
         <div className="flex items-start gap-2.5">
           <Checkbox defaultChecked={task.checked} className="mt-1 size-4 rounded-full" aria-label={`Завершить: ${task.title}`} />
-          <p className="min-w-0 flex-1 text-[15px] font-semibold leading-5 tracking-[-0.02em]">
+          <p className="min-w-0 flex-1 text-lg font-semibold leading-6 tracking-[-0.025em] text-foreground">
             {task.title}
           </p>
         </div>
@@ -186,11 +189,7 @@ function FocusLevel({ tasks }: { tasks: FocusTask[] }) {
   const visibleTasks = tasks.slice(0, 3);
 
   return (
-    <section className="mx-auto w-full max-w-[440px] pb-40 pt-20">
-      <header className="mb-7 text-center">
-        <p className="text-xs text-muted-foreground">30 июня 2026, вторник</p>
-      </header>
-
+    <section className="mx-auto w-full max-w-[440px] pb-40 pt-[188px] sm:pt-[124px]">
       <div className="space-y-4">
         <div>
           <p className="mb-2 px-2 text-xs text-muted-foreground">Сегодня</p>
@@ -214,7 +213,7 @@ function FocusLevel({ tasks }: { tasks: FocusTask[] }) {
 
 function DeskLevel() {
   return (
-    <section className="mx-auto grid w-full max-w-4xl grid-cols-1 gap-4 pb-40 pt-28 sm:grid-cols-2">
+    <section className="mx-auto grid w-full max-w-4xl grid-cols-1 gap-4 pb-40 pt-40 sm:grid-cols-2 sm:pt-28">
       <Card className="min-h-52 bg-card/90">
         <CardContent className="flex h-full flex-col justify-between p-6">
           <Gauge className="size-5 text-muted-foreground" />
@@ -241,7 +240,7 @@ function PlanLevel() {
   const days = ["Пн", "Вт", "Ср", "Чт", "Пт"];
 
   return (
-    <section className="mx-auto w-full max-w-5xl pb-40 pt-28">
+    <section className="mx-auto w-full max-w-5xl pb-40 pt-40 sm:pt-28">
       <Card className="overflow-x-auto bg-card/92 py-0">
         <CardContent className="grid min-h-96 min-w-[720px] grid-cols-5 divide-x p-0">
           {days.map((day, index) => (
@@ -263,19 +262,18 @@ function PlanLevel() {
 
 function AiDock() {
   return (
-    <div className="fixed bottom-5 left-1/2 z-40 w-[min(460px,calc(100vw-32px))] -translate-x-1/2">
-      <Card className="border-border/80 bg-background/96 py-0 shadow-[0_22px_64px_-24px_oklch(0_0_0/0.48)] backdrop-blur-2xl">
-        <CardContent className="flex items-center gap-1.5 p-2">
-          <Bot className="ml-2 size-4 text-muted-foreground" />
+    <div className="fixed bottom-5 left-1/2 z-40 w-[min(372px,calc(100vw-32px))] -translate-x-1/2">
+      <Card className="rounded-[20px] bg-background/98 py-0 ring-1 ring-border shadow-[0_22px_64px_-24px_rgb(0_0_0/0.32)] backdrop-blur-2xl">
+        <CardContent className="flex items-center gap-1 p-1">
           <Input
-            className="h-10 border-0 bg-transparent px-2 text-sm shadow-none focus-visible:ring-0"
+            className="h-10 border-0 bg-transparent px-3 text-[15px] shadow-none focus-visible:ring-0"
             placeholder="Спросите или поставьте задачу"
           />
-          <Button variant="ghost" size="icon-sm" className="rounded-full text-muted-foreground" aria-label="Голосовой ввод">
-            <Mic className="size-4" />
+          <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground" aria-label="Голосовой ввод">
+            <Mic className="size-[18px]" />
           </Button>
-          <Button size="icon-sm" className="rounded-full" aria-label="Отправить">
-            <ArrowUp className="size-4" />
+          <Button size="icon" className="rounded-full" aria-label="Отправить">
+            <ArrowUp className="size-[18px]" />
           </Button>
         </CardContent>
       </Card>
@@ -298,14 +296,14 @@ export function FocusWorkspace({ tasks }: { tasks: FocusTask[] }) {
   }
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[oklch(0.965_0_0)] text-foreground">
+    <div className="workspace-theme relative min-h-screen overflow-x-hidden text-foreground">
       <WorkspaceChrome activeLevel={activeLevel} onLevelChange={selectLevel} />
       <LeftRail />
 
       <div className="workspace-progressive-blur workspace-progressive-blur--top" aria-hidden="true" />
       <div className="workspace-progressive-blur workspace-progressive-blur--bottom" aria-hidden="true" />
 
-      <main className="min-h-screen px-4 sm:px-8 lg:pl-48">
+      <main className="min-h-screen px-4 sm:px-8">
         <div className="grid min-h-screen">
           <AnimatePresence initial={false} mode="sync" custom={direction}>
             <motion.div
