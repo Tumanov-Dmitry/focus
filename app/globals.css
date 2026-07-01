@@ -166,12 +166,33 @@
     @apply border border-border bg-card shadow-soft;
   }
 
-  .workspace-rail-item {
-    transform: translateX(var(--rail-x)) rotate(var(--rail-r));
+  .workspace-theme {
+    --workspace-background: #ececec;
+    --foreground: #171717;
+    --muted: #e0e0e0;
+    --muted-foreground: #9b9b9b;
+    --secondary: #f7f7f7;
+    --border: #d9d9d9;
+    --input: #dedede;
+    background: var(--workspace-background);
   }
 
-  .workspace-rail:hover .workspace-rail-item {
-    transform: translateX(0) rotate(0);
+  .workspace-rail {
+    perspective: 750px;
+    perspective-origin: left center;
+  }
+
+  .workspace-rail-stack {
+    transform: translate3d(0, 0, -36px) rotateY(27deg) scale(0.96);
+    transform-origin: left center;
+    transform-style: preserve-3d;
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+
+  .workspace-rail:hover .workspace-rail-stack,
+  .workspace-rail:focus-within .workspace-rail-stack {
+    transform: translate3d(0, 0, 0) rotateY(0deg) scale(1);
   }
 
   .workspace-progressive-blur {
@@ -189,10 +210,10 @@
     top: 0;
     background: linear-gradient(
       to bottom,
-      oklch(0.965 0 0) 0%,
-      oklch(0.965 0 0 / 0.96) 28%,
-      oklch(0.965 0 0 / 0.72) 58%,
-      oklch(0.965 0 0 / 0) 100%
+      rgb(236 236 236) 0%,
+      rgb(236 236 236 / 96%) 28%,
+      rgb(236 236 236 / 72%) 58%,
+      rgb(236 236 236 / 0%) 100%
     );
     mask-image: linear-gradient(to bottom, black 0%, black 42%, transparent 100%);
   }
@@ -202,10 +223,10 @@
     height: 148px;
     background: linear-gradient(
       to top,
-      oklch(0.965 0 0) 0%,
-      oklch(0.965 0 0 / 0.98) 32%,
-      oklch(0.965 0 0 / 0.76) 64%,
-      oklch(0.965 0 0 / 0) 100%
+      rgb(236 236 236) 0%,
+      rgb(236 236 236 / 98%) 32%,
+      rgb(236 236 236 / 76%) 64%,
+      rgb(236 236 236 / 0%) 100%
     );
     mask-image: linear-gradient(to top, black 0%, black 48%, transparent 100%);
   }
