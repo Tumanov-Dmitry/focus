@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { hasSupabasePublicEnv } from "@/lib/config/env";
 import { createClient } from "@/lib/supabase/server";
+
+const MISSING_ENV_ERROR =
+  "Сервер не настроен: не заданы переменные Supabase (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY).";
 
 export type AuthResult = {
   error: string | null;
@@ -28,6 +32,10 @@ function translateAuthError(message: string): string {
 }
 
 export async function signIn(email: string, password: string): Promise<AuthResult> {
+  if (!hasSupabasePublicEnv()) {
+    return { error: MISSING_ENV_ERROR, message: null };
+  }
+
   const trimmedEmail = email.trim();
   if (!trimmedEmail || !password) {
     return { error: "Введите email и пароль.", message: null };
@@ -48,6 +56,10 @@ export async function signIn(email: string, password: string): Promise<AuthResul
 }
 
 export async function signUp(email: string, password: string): Promise<AuthResult> {
+  if (!hasSupabasePublicEnv()) {
+    return { error: MISSING_ENV_ERROR, message: null };
+  }
+
   const trimmedEmail = email.trim();
   if (!trimmedEmail || !password) {
     return { error: "Введите email и пароль.", message: null };
@@ -79,8 +91,10 @@ export async function signUp(email: string, password: string): Promise<AuthResul
 }
 
 export async function signOut(): Promise<void> {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  revalidatePath("/", "layout");
+  if (hasSupabasePublicEnv()) {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+    revalidatePath("/", "layout");
+  }
   redirect("/login");
 }
