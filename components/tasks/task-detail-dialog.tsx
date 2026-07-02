@@ -4,12 +4,10 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
-  Clock3,
   Copy,
   Flag,
   FolderKanban,
   ListChecks,
-  MessageSquareText,
   Phone,
   RotateCcw,
   Trash2,
@@ -17,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { TaskExtrasPanel } from "@/components/tasks/task-extras-panel";
 import { TaskSchedulePicker } from "@/components/tasks/task-schedule-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -360,29 +359,7 @@ export function TaskDetailDialog({
 
             <Separator />
 
-            <section className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border bg-muted/25 p-4">
-                <MessageSquareText className="mb-6 size-4 text-muted-foreground" />
-                <p className="text-sm font-medium">Комментарии</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Обсуждение задачи
-                </p>
-              </div>
-              <div className="rounded-2xl border bg-muted/25 p-4">
-                <ListChecks className="mb-6 size-4 text-muted-foreground" />
-                <p className="text-sm font-medium">Подзадачи</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Чеклист и прогресс
-                </p>
-              </div>
-              <div className="rounded-2xl border bg-muted/25 p-4">
-                <Clock3 className="mb-6 size-4 text-muted-foreground" />
-                <p className="text-sm font-medium">Учёт времени</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Таймер и записи
-                </p>
-              </div>
-            </section>
+            <TaskExtrasPanel key={task.id} taskId={task.id} />
           </div>
 
           <aside className="space-y-6 border-t bg-muted/20 p-6 md:border-l md:border-t-0">

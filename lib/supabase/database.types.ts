@@ -380,7 +380,15 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      reorder_checklist_items: {
+        Args: {
+          p_item_ids: string[];
+          p_task_id: string;
+        };
+        Returns: undefined;
+      };
+    };
     Enums: {
       activity_action:
         | "created"

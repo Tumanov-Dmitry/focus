@@ -60,6 +60,33 @@ export type TaskFormOptions = {
   statuses: TaskStatusOption[];
 };
 
+export type TaskChecklistItem = {
+  content: string;
+  id: string;
+  isDone: boolean;
+  position: number;
+};
+
+export type TaskLink = {
+  id: string;
+  position: number;
+  title: string | null;
+  url: string;
+};
+
+export type TaskComment = {
+  body: string;
+  createdAt: string;
+  id: string;
+  isOwn: boolean;
+};
+
+export type TaskExtras = {
+  checklist: TaskChecklistItem[];
+  comments: TaskComment[];
+  links: TaskLink[];
+};
+
 type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
 
 const mockTodayTasks: FocusTask[] = [
