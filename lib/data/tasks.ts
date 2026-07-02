@@ -17,6 +17,8 @@ export type FocusTask = {
   priority: TaskPriority;
   projectId: string | null;
   spaceId: string;
+  startDate: string | null;
+  startTime: string | null;
   status: "open" | "done";
   statusId: string | null;
   title: string;
@@ -32,6 +34,8 @@ export type FocusTaskPatch = Partial<
     | "estimateMinutes"
     | "priority"
     | "projectId"
+    | "startDate"
+    | "startTime"
     | "statusId"
     | "title"
     | "type"
@@ -56,6 +60,33 @@ export type TaskFormOptions = {
   statuses: TaskStatusOption[];
 };
 
+export type TaskChecklistItem = {
+  content: string;
+  id: string;
+  isDone: boolean;
+  position: number;
+};
+
+export type TaskLink = {
+  id: string;
+  position: number;
+  title: string | null;
+  url: string;
+};
+
+export type TaskComment = {
+  body: string;
+  createdAt: string;
+  id: string;
+  isOwn: boolean;
+};
+
+export type TaskExtras = {
+  checklist: TaskChecklistItem[];
+  comments: TaskComment[];
+  links: TaskLink[];
+};
+
 type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
 
 const mockTodayTasks: FocusTask[] = [
@@ -70,6 +101,8 @@ const mockTodayTasks: FocusTask[] = [
     priority: "high",
     projectId: null,
     spaceId: "mock-space",
+    startDate: dateKey(),
+    startTime: null,
     status: "open",
     statusId: "mock-status-work",
     title: "Собрать первый экран карточки задачи",
@@ -86,6 +119,8 @@ const mockTodayTasks: FocusTask[] = [
     priority: "medium",
     projectId: null,
     spaceId: "mock-space",
+    startDate: dateKey(),
+    startTime: "15:30:00",
     status: "open",
     statusId: null,
     title: "Созвон по структуре продукта",
@@ -131,6 +166,8 @@ export function toFocusTask(task: TaskRow): FocusTask {
     priority: task.priority,
     projectId: task.project_id,
     spaceId: task.space_id,
+    startDate: task.start_date,
+    startTime: task.start_time,
     status: task.completed_at ? "done" : "open",
     statusId: task.status_id,
     title: task.title,
@@ -144,11 +181,14 @@ export async function getTodayTasks(): Promise<FocusTask[]> {
   }
 
   const supabase = await createClient();
+  const today = dateKey();
   const { data, error } = await supabase
     .from("tasks")
     .select("*")
     .is("deleted_at", null)
-    .eq("due_date", dateKey())
+    .or(
+      `and(start_date.lte.${today},due_date.gte.${today}),and(start_date.is.null,due_date.eq.${today})`,
+    )
     .order("created_at", { ascending: false })
     .limit(20);
 
