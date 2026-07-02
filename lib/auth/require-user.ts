@@ -1,5 +1,6 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
+import { hasSupabasePublicEnv } from "@/lib/config/env";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -12,6 +13,10 @@ export type RequireUserResult =
   | { ok: false; error: string };
 
 export async function requireUser(): Promise<RequireUserResult> {
+  if (!hasSupabasePublicEnv()) {
+    return { ok: false, error: "Supabase не настроен на сервере." };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
