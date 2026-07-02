@@ -6,20 +6,25 @@ export type FocusTask = {
   id: string;
   title: string;
   meta: string;
-  checked?: boolean;
+  checked: boolean;
+  status: "open" | "done" | "archived";
 };
 
 type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
 
 const mockTodayTasks: FocusTask[] = [
-  { id: "mock-1", title: "Название задачи", meta: "Сегодня · 25 минут" },
-  { id: "mock-2", title: "Название задачи", meta: "После обеда" },
-  { id: "mock-3", title: "Название задачи", meta: "Низкий шум" },
-  { id: "mock-4", title: "Закрыть день коротким обзором", meta: "Вечер" },
+  { id: "mock-1", title: "Название задачи", meta: "Сегодня · средняя энергия", checked: false, status: "open" },
+  { id: "mock-2", title: "Название задачи", meta: "После обеда", checked: false, status: "open" },
+  { id: "mock-3", title: "Название задачи", meta: "Низкий шум", checked: false, status: "open" },
+  { id: "mock-4", title: "Закрыть день коротким обзором", meta: "Вечер", checked: false, status: "open" },
 ];
 
-function formatTaskMeta(task: TaskRow) {
-  const dateLabel = task.due_on ? "Сегодня" : "Без даты";
+function formatTaskMeta(task: TaskRow): string {
+  const dateLabel = task.due_on
+    ? new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" })
+        .format(new Date(`${task.due_on}T00:00:00`))
+        .replace(" г.", "")
+    : "Без даты";
   const energyLabel =
     task.energy === "low"
       ? "низкая энергия"
@@ -36,29 +41,31 @@ function mapTask(task: TaskRow): FocusTask {
     title: task.title,
     meta: formatTaskMeta(task),
     checked: task.status === "done",
+    status: task.status,
   };
 }
 
 export async function getTodayTasks(): Promise<FocusTask[]> {
+  // Without Supabase configured we show placeholder content.
   if (!hasSupabasePublicEnv()) {
     return mockTodayTasks;
   }
 
   const supabase = await createClient();
-  const today = new Date().toISOString().slice(0, 10);
 
+  // RLS scopes the result to the authenticated user; no client-side owner
+  // filter is required. Return the real list even when it is empty.
   const { data, error } = await supabase
     .from("tasks")
     .select("*")
-    .eq("due_on", today)
     .neq("status", "archived")
     .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true })
-    .limit(8);
+    .order("created_at", { ascending: false })
+    .limit(20);
 
-  if (error || !data?.length) {
-    return mockTodayTasks;
+  if (error) {
+    return [];
   }
 
-  return data.map(mapTask);
+  return (data ?? []).map(mapTask);
 }
