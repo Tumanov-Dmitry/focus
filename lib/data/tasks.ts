@@ -53,12 +53,15 @@ export async function getTodayTasks(): Promise<FocusTask[]> {
 
   const supabase = await createClient();
 
-  // RLS scopes the result to the authenticated user; no client-side owner
-  // filter is required. Return the real list even when it is empty.
+  // The page renders a "Сегодня" list, so scope to tasks due today. New tasks
+  // created here get due_on = today, so they still appear. RLS scopes the
+  // result to the authenticated user; no client-side owner filter is required.
+  const today = new Date().toISOString().slice(0, 10);
   const { data, error } = await supabase
     .from("tasks")
     .select("*")
     .neq("status", "archived")
+    .eq("due_on", today)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false })
     .limit(20);
