@@ -10,6 +10,7 @@ import {
   CircleUserRound,
   FolderKanban,
   Gauge,
+  LogOut,
   Menu,
   Mic,
   MoreHorizontal,
@@ -17,20 +18,36 @@ import {
   Search,
   Sparkles,
   Target,
+  Trash2,
   UsersRound,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { toast } from "sonner";
 
-import { Badge } from "@/components/ui/badge";
+import { signOut } from "@/app/auth/actions";
+import { createTask, deleteTask, setTaskDone } from "@/app/today/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { WeeklyPlanner } from "@/components/workspace/weekly-planner";
 import { cn } from "@/lib/utils";
 import type { FocusTask } from "@/lib/data/tasks";
 
 type WorkspaceLevel = "desk" | "focus" | "plan";
+
+type TaskHandlers = {
+  onToggle: (id: string, done: boolean) => void;
+  onDelete: (id: string) => void;
+};
 
 const levels: Array<{ id: WorkspaceLevel; label: string }> = [
   { id: "desk", label: "Деск" },
@@ -87,12 +104,51 @@ function LeftRail() {
   );
 }
 
+function ProfileMenu({ userEmail }: { userEmail?: string }) {
+  const [pending, startTransition] = useTransition();
+
+  function handleSignOut() {
+    startTransition(async () => {
+      await signOut();
+    });
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon-lg" className="rounded-full" aria-label="Профиль">
+          <CircleUserRound className="size-5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-56">
+        <DropdownMenuLabel className="truncate text-xs font-normal text-muted-foreground">
+          {userEmail ?? "Гость"}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          disabled={pending || !userEmail}
+          onSelect={(event) => {
+            event.preventDefault();
+            handleSignOut();
+          }}
+        >
+          <LogOut className="size-4" />
+          Выйти
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function WorkspaceChrome({
   activeLevel,
   onLevelChange,
+  userEmail,
 }: {
   activeLevel: WorkspaceLevel;
   onLevelChange: (level: WorkspaceLevel) => void;
+  userEmail?: string;
 }) {
   const currentDate = new Date();
   const datePart = new Intl.DateTimeFormat("ru-RU", {
@@ -108,9 +164,7 @@ function WorkspaceChrome({
   return (
     <>
       <div className="fixed left-5 top-5 z-40 flex items-center rounded-full border bg-background/92 p-1 shadow-sm backdrop-blur-xl">
-        <Button variant="ghost" size="icon-lg" className="rounded-full" aria-label="Профиль">
-          <CircleUserRound className="size-5" />
-        </Button>
+        <ProfileMenu userEmail={userEmail} />
         <Button variant="ghost" size="icon-lg" className="rounded-full" aria-label="Открыть меню">
           <Menu className="size-5" />
         </Button>
@@ -164,76 +218,85 @@ function WorkspaceChrome({
   );
 }
 
-function TaskCard({ task, index }: { task: FocusTask; index: number }) {
+function TaskCard({ task, onToggle, onDelete }: { task: FocusTask } & TaskHandlers) {
   return (
     <Card className="rounded-[20px] bg-card py-0 ring-1 ring-border shadow-[0_16px_36px_-24px_rgb(0_0_0/0.32)]">
       <CardContent className="p-[14px]">
         <div className="mb-2 flex items-center justify-between gap-3">
-          <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-destructive/70">
+          <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-muted-foreground">
             <Sparkles className="size-3" />
-            {index === 0 ? "ЭТЕШЕН · Прототип" : "ЭТЕШЕН"}
+            {task.meta}
           </span>
-          <Button variant="ghost" size="icon-xs" aria-label="Действия задачи">
-            <MoreHorizontal className="size-3.5" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon-xs" aria-label="Действия задачи">
+                <MoreHorizontal className="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={(event) => {
+                  event.preventDefault();
+                  onDelete(task.id);
+                }}
+              >
+                <Trash2 className="size-4" />
+                Удалить
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <div className="flex items-start gap-2.5">
-          <Checkbox defaultChecked={task.checked} className="mt-1 size-4 rounded-full" aria-label={`Завершить: ${task.title}`} />
-          <p className="min-w-0 flex-1 text-lg font-semibold leading-6 tracking-[-0.025em] text-foreground">
+          <Checkbox
+            checked={task.checked}
+            onCheckedChange={(value) => onToggle(task.id, value === true)}
+            className="mt-1 size-4 rounded-full"
+            aria-label={`Завершить: ${task.title}`}
+          />
+          <p
+            className={cn(
+              "min-w-0 flex-1 text-lg font-semibold leading-6 tracking-[-0.025em]",
+              task.checked ? "text-muted-foreground line-through" : "text-foreground",
+            )}
+          >
             {task.title}
           </p>
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-1.5 pl-6">
-          <Badge variant="outline" className="h-6 rounded-md px-2 text-[10px] font-normal text-muted-foreground">
-            30 июня
-          </Badge>
-          <Badge variant="outline" className="h-6 rounded-md px-2 text-[10px] font-normal text-muted-foreground">
-            {index === 0 ? "Сейчас" : "Срочно"}
-          </Badge>
-          <Badge variant="outline" className="h-6 rounded-md px-2 text-[10px] font-normal text-muted-foreground">
-            1 / 2
-          </Badge>
-          <Badge variant="outline" className="h-6 rounded-md px-2 text-[10px] font-normal text-muted-foreground">
-            0
-          </Badge>
-          <Badge variant="outline" className="ml-auto h-6 rounded-md px-2 text-[10px] font-normal tabular-nums text-muted-foreground">
-            00:00
-          </Badge>
         </div>
       </CardContent>
     </Card>
   );
 }
 
-function FocusLevel({ tasks }: { tasks: FocusTask[] }) {
-  const visibleTasks = tasks.slice(0, 3);
-
+function FocusLevel({ tasks, onToggle, onDelete }: { tasks: FocusTask[] } & TaskHandlers) {
   return (
     <section className="mx-auto w-full max-w-[440px] pb-40 pt-[188px] sm:pt-[124px]">
       <div className="space-y-4">
         <div>
           <p className="mb-2 px-2 text-xs text-muted-foreground">Сегодня</p>
-          <div className="space-y-2.5">
-            {visibleTasks.slice(0, 2).map((task, index) => (
-              <TaskCard key={task.id} task={task} index={index} />
-            ))}
-          </div>
+          {tasks.length === 0 ? (
+            <div className="rounded-[20px] border border-dashed border-border/70 bg-card/40 p-8 text-center text-sm text-muted-foreground">
+              Пока нет задач. Добавьте первую через поле снизу.
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {tasks.map((task) => (
+                <TaskCard key={task.id} task={task} onToggle={onToggle} onDelete={onDelete} />
+              ))}
+            </div>
+          )}
         </div>
-
-        {visibleTasks[2] ? (
-          <div>
-            <p className="mb-2 px-2 text-xs text-muted-foreground">Завтра</p>
-            <TaskCard task={visibleTasks[2]} index={2} />
-          </div>
-        ) : null}
       </div>
     </section>
   );
 }
 
-function DeskLevel() {
+function DeskLevel({ tasks }: { tasks: FocusTask[] }) {
+  const openTasks = tasks.filter((task) => task.status === "open");
+  const nextTask = openTasks[0];
+  const countLabel = pluralizeTasks(openTasks.length);
+
   return (
     <section className="mx-auto grid w-full max-w-4xl grid-cols-1 gap-4 pb-40 pt-40 sm:grid-cols-2 sm:pt-28">
       <Card className="min-h-52 bg-card/90">
@@ -241,7 +304,7 @@ function DeskLevel() {
           <Gauge className="size-5 text-muted-foreground" />
           <div>
             <p className="text-xs text-muted-foreground">Ритм дня</p>
-            <p className="mt-1 text-3xl font-semibold tracking-[-0.05em]">3 задачи</p>
+            <p className="mt-1 text-3xl font-semibold tracking-[-0.05em]">{countLabel}</p>
           </div>
         </CardContent>
       </Card>
@@ -250,7 +313,9 @@ function DeskLevel() {
           <BriefcaseBusiness className="size-5 text-muted-foreground" />
           <div>
             <p className="text-xs text-muted-foreground">Ближайший блок</p>
-            <p className="mt-1 text-lg font-semibold tracking-[-0.03em]">Работа над прототипом</p>
+            <p className="mt-1 text-lg font-semibold tracking-[-0.03em]">
+              {nextTask ? nextTask.title : "Нет активных задач"}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -258,19 +323,55 @@ function DeskLevel() {
   );
 }
 
-function AiDock() {
+function pluralizeTasks(count: number): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  let word = "задач";
+  if (mod10 === 1 && mod100 !== 11) {
+    word = "задача";
+  } else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
+    word = "задачи";
+  }
+  return `${count} ${word}`;
+}
+
+function AiDock({ onCreate, pending }: { onCreate: (title: string) => void; pending: boolean }) {
+  const [draft, setDraft] = useState("");
+
+  function submit() {
+    const title = draft.trim();
+    if (!title) return;
+    setDraft("");
+    onCreate(title);
+  }
+
   return (
     <div className="fixed bottom-5 left-1/2 z-40 w-[min(372px,calc(100vw-32px))] -translate-x-1/2">
       <Card className="rounded-[20px] bg-background/98 py-0 ring-1 ring-border shadow-[0_22px_64px_-24px_rgb(0_0_0/0.32)] backdrop-blur-2xl">
         <CardContent className="flex items-center gap-1 p-1">
           <Input
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                submit();
+              }
+            }}
             className="h-10 border-0 bg-transparent px-3 text-[15px] shadow-none focus-visible:ring-0"
             placeholder="Спросите или поставьте задачу"
+            aria-label="Новая задача"
           />
           <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground" aria-label="Голосовой ввод">
             <Mic className="size-[18px]" />
           </Button>
-          <Button size="icon" className="rounded-full" aria-label="Отправить">
+          <Button
+            size="icon"
+            className="rounded-full"
+            aria-label="Добавить задачу"
+            onClick={submit}
+            disabled={pending || draft.trim().length === 0}
+          >
             <ArrowUp className="size-[18px]" />
           </Button>
         </CardContent>
@@ -279,10 +380,23 @@ function AiDock() {
   );
 }
 
-export function FocusWorkspace({ tasks }: { tasks: FocusTask[] }) {
+export function FocusWorkspace({
+  tasks,
+  userEmail,
+}: {
+  tasks: FocusTask[];
+  userEmail?: string;
+}) {
   const [activeLevel, setActiveLevel] = useState<WorkspaceLevel>("focus");
   const [direction, setDirection] = useState(0);
+  const [items, setItems] = useState<FocusTask[]>(tasks);
+  const [pending, startTransition] = useTransition();
   const reduceMotion = useReducedMotion();
+
+  // Keep local state in sync with fresh server data after revalidation.
+  useEffect(() => {
+    setItems(tasks);
+  }, [tasks]);
 
   function selectLevel(nextLevel: WorkspaceLevel) {
     if (nextLevel === activeLevel) return;
@@ -293,9 +407,48 @@ export function FocusWorkspace({ tasks }: { tasks: FocusTask[] }) {
     setActiveLevel(nextLevel);
   }
 
+  function handleToggle(id: string, done: boolean) {
+    setItems((prev) =>
+      prev.map((task) =>
+        task.id === id
+          ? { ...task, checked: done, status: done ? "done" : "open" }
+          : task,
+      ),
+    );
+    startTransition(async () => {
+      const result = await setTaskDone(id, done);
+      if (result.error) {
+        toast.error(result.error);
+        setItems(tasks);
+      }
+    });
+  }
+
+  function handleDelete(id: string) {
+    setItems((prev) => prev.filter((task) => task.id !== id));
+    startTransition(async () => {
+      const result = await deleteTask(id);
+      if (result.error) {
+        toast.error(result.error);
+        setItems(tasks);
+      } else {
+        toast.success("Задача удалена");
+      }
+    });
+  }
+
+  function handleCreate(title: string) {
+    startTransition(async () => {
+      const result = await createTask(title);
+      if (result.error) {
+        toast.error(result.error);
+      }
+    });
+  }
+
   return (
     <div className="workspace-theme relative min-h-screen overflow-x-hidden text-foreground">
-      <WorkspaceChrome activeLevel={activeLevel} onLevelChange={selectLevel} />
+      <WorkspaceChrome activeLevel={activeLevel} onLevelChange={selectLevel} userEmail={userEmail} />
       <LeftRail />
 
       <div className="workspace-progressive-blur workspace-progressive-blur--top" aria-hidden="true" />
@@ -330,15 +483,17 @@ export function FocusWorkspace({ tasks }: { tasks: FocusTask[] }) {
               exit="exit"
               transition={{ duration: reduceMotion ? 0.01 : 0.56, ease: [0.22, 1, 0.36, 1] }}
             >
-              {activeLevel === "desk" ? <DeskLevel /> : null}
-              {activeLevel === "focus" ? <FocusLevel tasks={tasks} /> : null}
-              {activeLevel === "plan" ? <WeeklyPlanner tasks={tasks} /> : null}
+              {activeLevel === "desk" ? <DeskLevel tasks={items} /> : null}
+              {activeLevel === "focus" ? (
+                <FocusLevel tasks={items} onToggle={handleToggle} onDelete={handleDelete} />
+              ) : null}
+              {activeLevel === "plan" ? <WeeklyPlanner tasks={items} /> : null}
             </motion.div>
           </AnimatePresence>
         </div>
       </main>
 
-      <AiDock />
+      <AiDock onCreate={handleCreate} pending={pending} />
     </div>
   );
 }
