@@ -1,7 +1,7 @@
 "use client";
 
 import { ExternalLink, Link2, Plus, Trash2 } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import {
@@ -14,28 +14,55 @@ import type { TaskLink } from "@/lib/data/tasks";
 
 type TaskLinksProps = {
   initialLinks: TaskLink[];
+  onLinksChange?: (links: TaskLink[]) => void;
   taskId: string;
 };
 
-export function TaskLinks({ initialLinks, taskId }: TaskLinksProps) {
+export function TaskLinks({
+  initialLinks,
+  onLinksChange,
+  taskId,
+}: TaskLinksProps) {
   const [links, setLinks] = useState(initialLinks);
   const [draft, setDraft] = useState("");
   const [pending, startTransition] = useTransition();
 
+  useEffect(() => {
+    onLinksChange?.(links);
+  }, [links, onLinksChange]);
+
   function addLink() {
     const url = draft.trim();
     if (!url || pending) return;
+    const previous = links;
+    const optimisticId = `optimistic-${crypto.randomUUID()}`;
+    const optimisticUrl =
+      url.startsWith("http://") || url.startsWith("https://")
+        ? url
+        : `https://${url}`;
+    const optimisticLink: TaskLink = {
+      id: optimisticId,
+      position: links.length,
+      title: url,
+      url: optimisticUrl,
+    };
     setDraft("");
+    setLinks([...links, optimisticLink]);
 
     startTransition(async () => {
       const result = await createTaskLinkAction(taskId, url);
       if (result.error || !result.link) {
         toast.error(result.error ?? "Не удалось добавить ссылку");
+        setLinks(previous);
         setDraft(url);
         return;
       }
       const createdLink = result.link;
-      setLinks((current) => [...current, createdLink]);
+      setLinks((current) =>
+        current.map((link) =>
+          link.id === optimisticId ? createdLink : link,
+        ),
+      );
     });
   }
 

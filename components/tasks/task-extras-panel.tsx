@@ -11,13 +11,26 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TaskExtras } from "@/lib/data/tasks";
 
+const taskExtrasCache = new Map<string, TaskExtras>();
+
 export function TaskExtrasPanel({ taskId }: { taskId: string }) {
-  const [extras, setExtras] = useState<TaskExtras | null>(null);
+  const [extras, setExtras] = useState<TaskExtras | null>(
+    () => taskExtrasCache.get(taskId) ?? null,
+  );
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let ignore = false;
+    const cached = taskExtrasCache.get(taskId);
+    if (cached) {
+      setExtras(cached);
+      setError(null);
+      return () => {
+        ignore = true;
+      };
+    }
+
     setExtras(null);
     setError(null);
 
@@ -27,6 +40,7 @@ export function TaskExtrasPanel({ taskId }: { taskId: string }) {
         setError(result.error ?? "Не удалось загрузить данные задачи.");
         return;
       }
+      taskExtrasCache.set(taskId, result.extras);
       setExtras(result.extras);
     });
 
@@ -70,9 +84,30 @@ export function TaskExtrasPanel({ taskId }: { taskId: string }) {
 
   return (
     <div className="space-y-8">
-      <TaskChecklist taskId={taskId} initialItems={extras.checklist} />
-      <TaskLinks taskId={taskId} initialLinks={extras.links} />
-      <TaskComments taskId={taskId} initialComments={extras.comments} />
+      <TaskChecklist
+        taskId={taskId}
+        initialItems={extras.checklist}
+        onItemsChange={(checklist) => {
+          const cached = taskExtrasCache.get(taskId);
+          if (cached) taskExtrasCache.set(taskId, { ...cached, checklist });
+        }}
+      />
+      <TaskLinks
+        taskId={taskId}
+        initialLinks={extras.links}
+        onLinksChange={(links) => {
+          const cached = taskExtrasCache.get(taskId);
+          if (cached) taskExtrasCache.set(taskId, { ...cached, links });
+        }}
+      />
+      <TaskComments
+        taskId={taskId}
+        initialComments={extras.comments}
+        onCommentsChange={(comments) => {
+          const cached = taskExtrasCache.get(taskId);
+          if (cached) taskExtrasCache.set(taskId, { ...cached, comments });
+        }}
+      />
     </div>
   );
 }

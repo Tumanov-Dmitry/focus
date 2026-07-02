@@ -8,7 +8,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { useState, useTransition, type DragEvent } from "react";
+import { useEffect, useState, useTransition, type DragEvent } from "react";
 import { toast } from "sonner";
 
 import {
@@ -25,6 +25,7 @@ import type { TaskChecklistItem } from "@/lib/data/tasks";
 
 type TaskChecklistProps = {
   initialItems: TaskChecklistItem[];
+  onItemsChange?: (items: TaskChecklistItem[]) => void;
   taskId: string;
 };
 
@@ -34,6 +35,7 @@ function withPositions(items: TaskChecklistItem[]): TaskChecklistItem[] {
 
 export function TaskChecklist({
   initialItems,
+  onItemsChange,
   taskId,
 }: TaskChecklistProps) {
   const [items, setItems] = useState(() => withPositions(initialItems));
@@ -43,21 +45,39 @@ export function TaskChecklist({
   const doneCount = items.filter((item) => item.isDone).length;
   const progress = items.length === 0 ? 0 : (doneCount / items.length) * 100;
 
+  useEffect(() => {
+    onItemsChange?.(items);
+  }, [items, onItemsChange]);
+
   function addItem() {
     const content = draft.trim();
     if (!content || pending) return;
+    const previous = items;
+    const optimisticId = `optimistic-${crypto.randomUUID()}`;
+    const optimisticItem: TaskChecklistItem = {
+      content,
+      id: optimisticId,
+      isDone: false,
+      position: items.length,
+    };
     setDraft("");
+    setItems(withPositions([...items, optimisticItem]));
 
     startTransition(async () => {
       const result = await createChecklistItemAction(taskId, content);
       if (result.error || !result.item) {
         toast.error(result.error ?? "Не удалось добавить пункт");
+        setItems(previous);
         setDraft(content);
         return;
       }
       const createdItem = result.item;
       setItems((current) =>
-        withPositions([...current, createdItem]),
+        withPositions(
+          current.map((item) =>
+            item.id === optimisticId ? createdItem : item,
+          ),
+        ),
       );
     });
   }

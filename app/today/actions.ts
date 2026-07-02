@@ -1,7 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-
 import { requireUser } from "@/lib/auth/require-user";
 import { dateKey } from "@/lib/date";
 import {
@@ -66,7 +64,6 @@ export async function createTask(title: string): Promise<TaskActionResult> {
       { client: auth.supabase, userId: auth.user.id },
       { dueDate: today(), title: trimmed },
     );
-    revalidatePath("/today");
     return { error: null, task: toFocusTask(task) };
   } catch (error) {
     return actionError(error);
@@ -89,7 +86,6 @@ export async function setTaskDone(id: string, done: boolean): Promise<TaskAction
     return actionError(error);
   }
 
-  revalidatePath("/today");
   return ok;
 }
 
@@ -105,7 +101,6 @@ export async function deleteTask(id: string): Promise<TaskActionResult> {
     return actionError(error);
   }
 
-  revalidatePath("/today");
   return ok;
 }
 
@@ -163,7 +158,6 @@ export async function updateTask(
       id,
       update,
     );
-    revalidatePath("/today");
     return { error: null, task: toFocusTask(task) };
   } catch (error) {
     return actionError(error);
@@ -181,7 +175,6 @@ export async function duplicateTaskAction(id: string): Promise<TaskActionResult>
       { client: auth.supabase, userId: auth.user.id },
       id,
     );
-    revalidatePath("/today");
     return { error: null, task: toFocusTask(task) };
   } catch (error) {
     return actionError(error);
