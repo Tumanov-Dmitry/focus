@@ -1,4 +1,5 @@
 import { hasSupabasePublicEnv } from "@/lib/config/env";
+import { dateKey } from "@/lib/date";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -7,7 +8,7 @@ export type FocusTask = {
   title: string;
   meta: string;
   checked: boolean;
-  status: "open" | "done" | "archived";
+  status: "open" | "done";
 };
 
 type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
@@ -20,28 +21,30 @@ const mockTodayTasks: FocusTask[] = [
 ];
 
 function formatTaskMeta(task: TaskRow): string {
-  const dateLabel = task.due_on
+  const dateLabel = task.due_date
     ? new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" })
-        .format(new Date(`${task.due_on}T00:00:00`))
+        .format(new Date(`${task.due_date}T00:00:00`))
         .replace(" г.", "")
     : "Без даты";
-  const energyLabel =
-    task.energy === "low"
-      ? "низкая энергия"
-      : task.energy === "high"
-        ? "высокая энергия"
-        : "средняя энергия";
+  const priorityLabel =
+    task.priority === "low"
+      ? "низкий приоритет"
+      : task.priority === "medium"
+        ? "средний приоритет"
+        : task.priority === "high"
+          ? "высокий приоритет"
+          : "без приоритета";
 
-  return `${dateLabel} · ${energyLabel}`;
+  return `${dateLabel} · ${priorityLabel}`;
 }
 
-function mapTask(task: TaskRow): FocusTask {
+export function toFocusTask(task: TaskRow): FocusTask {
   return {
     id: task.id,
     title: task.title,
     meta: formatTaskMeta(task),
-    checked: task.status === "done",
-    status: task.status,
+    checked: task.completed_at !== null,
+    status: task.completed_at ? "done" : "open",
   };
 }
 
@@ -54,15 +57,14 @@ export async function getTodayTasks(): Promise<FocusTask[]> {
   const supabase = await createClient();
 
   // The page renders a "Сегодня" list, so scope to tasks due today. New tasks
-  // created here get due_on = today, so they still appear. RLS scopes the
-  // result to the authenticated user; no client-side owner filter is required.
-  const today = new Date().toISOString().slice(0, 10);
+  // created here get due_date = today, so they still appear. RLS scopes the
+  // result to the user's spaces; no client-side owner filter is required.
+  const today = dateKey();
   const { data, error } = await supabase
     .from("tasks")
     .select("*")
-    .neq("status", "archived")
-    .eq("due_on", today)
-    .order("sort_order", { ascending: true })
+    .is("deleted_at", null)
+    .eq("due_date", today)
     .order("created_at", { ascending: false })
     .limit(20);
 
@@ -70,5 +72,5 @@ export async function getTodayTasks(): Promise<FocusTask[]> {
     return [];
   }
 
-  return (data ?? []).map(mapTask);
+  return (data ?? []).map(toFocusTask);
 }

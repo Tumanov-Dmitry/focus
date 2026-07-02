@@ -3,13 +3,30 @@
 import { revalidatePath } from "next/cache";
 
 import { requireUser } from "@/lib/auth/require-user";
+import { dateKey } from "@/lib/date";
+import { toFocusTask, type FocusTask } from "@/lib/data/tasks";
+import {
+  createInboxTask,
+  setTaskCompletion,
+  TaskServiceError,
+  trashTask,
+} from "@/lib/tasks/service";
 
-export type TaskActionResult = { error: string | null };
+export type TaskActionResult = { error: string | null; task?: FocusTask };
 
 const ok: TaskActionResult = { error: null };
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  return dateKey();
+}
+
+function actionError(error: unknown): TaskActionResult {
+  return {
+    error:
+      error instanceof TaskServiceError
+        ? error.message
+        : "Не удалось выполнить действие. Попробуйте ещё раз.",
+  };
 }
 
 export async function createTask(title: string): Promise<TaskActionResult> {
@@ -23,18 +40,16 @@ export async function createTask(title: string): Promise<TaskActionResult> {
     return { error: auth.error };
   }
 
-  const { error } = await auth.supabase.from("tasks").insert({
-    owner_id: auth.user.id,
-    title: trimmed,
-    due_on: today(),
-  });
-
-  if (error) {
-    return { error: error.message };
+  try {
+    const task = await createInboxTask(
+      { client: auth.supabase, userId: auth.user.id },
+      { dueDate: today(), title: trimmed },
+    );
+    revalidatePath("/today");
+    return { error: null, task: toFocusTask(task) };
+  } catch (error) {
+    return actionError(error);
   }
-
-  revalidatePath("/today");
-  return ok;
 }
 
 export async function setTaskDone(id: string, done: boolean): Promise<TaskActionResult> {
@@ -43,16 +58,14 @@ export async function setTaskDone(id: string, done: boolean): Promise<TaskAction
     return { error: auth.error };
   }
 
-  const { error } = await auth.supabase
-    .from("tasks")
-    .update({
-      status: done ? "done" : "open",
-      completed_at: done ? new Date().toISOString() : null,
-    })
-    .eq("id", id);
-
-  if (error) {
-    return { error: error.message };
+  try {
+    await setTaskCompletion(
+      { client: auth.supabase, userId: auth.user.id },
+      id,
+      done,
+    );
+  } catch (error) {
+    return actionError(error);
   }
 
   revalidatePath("/today");
@@ -65,10 +78,10 @@ export async function deleteTask(id: string): Promise<TaskActionResult> {
     return { error: auth.error };
   }
 
-  const { error } = await auth.supabase.from("tasks").delete().eq("id", id);
-
-  if (error) {
-    return { error: error.message };
+  try {
+    await trashTask({ client: auth.supabase, userId: auth.user.id }, id);
+  } catch (error) {
+    return actionError(error);
   }
 
   revalidatePath("/today");

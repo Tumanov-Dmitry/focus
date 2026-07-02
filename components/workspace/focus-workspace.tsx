@@ -408,6 +408,7 @@ export function FocusWorkspace({
   }
 
   function handleToggle(id: string, done: boolean) {
+    const previous = items.find((task) => task.id === id);
     setItems((prev) =>
       prev.map((task) =>
         task.id === id
@@ -419,29 +420,57 @@ export function FocusWorkspace({
       const result = await setTaskDone(id, done);
       if (result.error) {
         toast.error(result.error);
-        setItems(tasks);
+        if (previous) {
+          setItems((current) =>
+            current.map((task) => (task.id === id ? previous : task)),
+          );
+        }
       }
     });
   }
 
   function handleDelete(id: string) {
+    const previousIndex = items.findIndex((task) => task.id === id);
+    const previous = items[previousIndex];
     setItems((prev) => prev.filter((task) => task.id !== id));
     startTransition(async () => {
       const result = await deleteTask(id);
       if (result.error) {
         toast.error(result.error);
-        setItems(tasks);
+        if (previous) {
+          setItems((current) => {
+            const restored = [...current];
+            restored.splice(Math.max(previousIndex, 0), 0, previous);
+            return restored;
+          });
+        }
       } else {
-        toast.success("Задача удалена");
+                toast.success("Задача перемещена в корзину");
       }
     });
   }
 
   function handleCreate(title: string) {
+    const optimisticId = `optimistic-${crypto.randomUUID()}`;
+    const optimisticTask: FocusTask = {
+      checked: false,
+      id: optimisticId,
+      meta: "Сегодня · без приоритета",
+      status: "open",
+      title,
+    };
+    setItems((current) => [optimisticTask, ...current]);
+
     startTransition(async () => {
       const result = await createTask(title);
       if (result.error) {
         toast.error(result.error);
+        setItems((current) => current.filter((task) => task.id !== optimisticId));
+      } else if (result.task) {
+        const createdTask = result.task;
+        setItems((current) =>
+          current.map((task) => (task.id === optimisticId ? createdTask : task)),
+        );
       }
     });
   }
