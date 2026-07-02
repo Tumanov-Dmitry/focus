@@ -4,6 +4,7 @@ import type { Database, Json } from "@/lib/supabase/database.types";
 
 type FocusSupabaseClient = SupabaseClient<Database>;
 type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
+type TaskUpdate = Database["public"]["Tables"]["tasks"]["Update"];
 type ActivityAction = Database["public"]["Enums"]["activity_action"];
 
 type TaskMutationContext = {
@@ -100,6 +101,152 @@ export async function createInboxTask(
   }
 
   return task;
+}
+
+export type EditableTaskFields = Pick<
+  TaskUpdate,
+  | "description"
+  | "due_date"
+  | "due_time"
+  | "estimate_minutes"
+  | "priority"
+  | "project_id"
+  | "status_id"
+  | "title"
+  | "type"
+>;
+
+export async function updateTaskFields(
+  context: TaskMutationContext,
+  taskId: string,
+  input: Partial<EditableTaskFields>,
+): Promise<TaskRow> {
+  const { data: currentTask, error: readError } = await context.client
+    .from("tasks")
+    .select("*")
+    .eq("id", taskId)
+    .is("deleted_at", null)
+    .single();
+
+  if (readError || !currentTask) {
+    throw new TaskServiceError(readError?.message ?? "Задача не найдена.");
+  }
+
+  const changedEntries = Object.entries(input).filter(
+    ([key, value]) => currentTask[key as keyof TaskRow] !== value,
+  );
+  if (changedEntries.length === 0) {
+    return currentTask;
+  }
+
+  const update = Object.fromEntries(changedEntries) as Partial<EditableTaskFields>;
+  const { data: updatedTask, error: updateError } = await context.client
+    .from("tasks")
+    .update(update)
+    .eq("id", taskId)
+    .is("deleted_at", null)
+    .select("*")
+    .single();
+
+  if (updateError || !updatedTask) {
+    throw new TaskServiceError(updateError?.message ?? "Не удалось обновить задачу.");
+  }
+
+  const changedKeys = changedEntries.map(([key]) => key);
+  const action: ActivityAction = changedKeys.includes("status_id")
+    ? "status_changed"
+    : changedKeys.includes("priority")
+      ? "priority_changed"
+      : changedKeys.some((key) => key === "due_date" || key === "due_time")
+        ? "rescheduled"
+        : "updated";
+
+  const oldValues: Record<string, Json> = {};
+  const newValues: Record<string, Json> = {};
+  for (const [key, value] of changedEntries) {
+    oldValues[key] = currentTask[key as keyof TaskRow] as Json;
+    newValues[key] = value as Json;
+  }
+
+  try {
+    await writeActivity(context, {
+      action,
+      entityId: taskId,
+      payload: { new: newValues, old: oldValues },
+      spaceId: currentTask.space_id,
+    });
+  } catch (activityError) {
+    await context.client
+      .from("tasks")
+      .update({
+        description: currentTask.description,
+        due_date: currentTask.due_date,
+        due_time: currentTask.due_time,
+        estimate_minutes: currentTask.estimate_minutes,
+        priority: currentTask.priority,
+        project_id: currentTask.project_id,
+        status_id: currentTask.status_id,
+        title: currentTask.title,
+        type: currentTask.type,
+      })
+      .eq("id", taskId);
+    throw activityError;
+  }
+
+  return updatedTask;
+}
+
+export async function duplicateTask(
+  context: TaskMutationContext,
+  taskId: string,
+): Promise<TaskRow> {
+  const { data: sourceTask, error: readError } = await context.client
+    .from("tasks")
+    .select("*")
+    .eq("id", taskId)
+    .is("deleted_at", null)
+    .single();
+
+  if (readError || !sourceTask) {
+    throw new TaskServiceError(readError?.message ?? "Задача не найдена.");
+  }
+
+  const { data: copy, error: insertError } = await context.client
+    .from("tasks")
+    .insert({
+      created_by: context.userId,
+      description: sourceTask.description,
+      due_date: sourceTask.due_date,
+      due_time: sourceTask.due_time,
+      estimate_minutes: sourceTask.estimate_minutes,
+      priority: sourceTask.priority,
+      project_id: sourceTask.project_id,
+      source: "manual",
+      space_id: sourceTask.space_id,
+      status_id: sourceTask.status_id,
+      title: `${sourceTask.title} — копия`,
+      type: sourceTask.type,
+    })
+    .select("*")
+    .single();
+
+  if (insertError || !copy) {
+    throw new TaskServiceError(insertError?.message ?? "Не удалось дублировать задачу.");
+  }
+
+  try {
+    await writeActivity(context, {
+      action: "duplicated",
+      entityId: copy.id,
+      payload: { source_task_id: sourceTask.id },
+      spaceId: copy.space_id,
+    });
+  } catch (activityError) {
+    await context.client.from("tasks").delete().eq("id", copy.id);
+    throw activityError;
+  }
+
+  return copy;
 }
 
 async function getMutableTask(

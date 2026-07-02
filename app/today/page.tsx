@@ -1,10 +1,13 @@
 import { FocusWorkspace } from "@/components/workspace/focus-workspace";
 import { requireUser } from "@/lib/auth/require-user";
 import { hasSupabasePublicEnv } from "@/lib/config/env";
-import { getTodayTasks } from "@/lib/data/tasks";
+import { getTaskFormOptions, getTodayTasks } from "@/lib/data/tasks";
 
 export default async function TodayPage() {
-  const tasks = await getTodayTasks();
+  const [tasks, taskOptions] = await Promise.all([
+    getTodayTasks(),
+    getTaskFormOptions(),
+  ]);
 
   // In configured mode the middleware guarantees a session; surface the email
   // for the profile menu. In mock mode there is no user.
@@ -16,5 +19,11 @@ export default async function TodayPage() {
     }
   }
 
-  return <FocusWorkspace tasks={tasks} userEmail={userEmail} />;
+  return (
+    <FocusWorkspace
+      tasks={tasks}
+      taskOptions={taskOptions}
+      userEmail={userEmail}
+    />
+  );
 }
