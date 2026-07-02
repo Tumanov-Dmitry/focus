@@ -25,7 +25,14 @@ import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { signOut } from "@/app/auth/actions";
-import { createTask, deleteTask, setTaskDone } from "@/app/today/actions";
+import {
+  createTask,
+  deleteTask,
+  duplicateTaskAction,
+  setTaskDone,
+  updateTask,
+} from "@/app/today/actions";
+import { TaskDetailDialog } from "@/components/tasks/task-detail-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -39,14 +46,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { WeeklyPlanner } from "@/components/workspace/weekly-planner";
+import { dateKey } from "@/lib/date";
 import { cn } from "@/lib/utils";
-import type { FocusTask } from "@/lib/data/tasks";
+import type {
+  FocusTask,
+  FocusTaskPatch,
+  TaskFormOptions,
+} from "@/lib/data/tasks";
 
 type WorkspaceLevel = "desk" | "focus" | "plan";
 
 type TaskHandlers = {
   onToggle: (id: string, done: boolean) => void;
   onDelete: (id: string) => void;
+  onOpen: (id: string) => void;
 };
 
 const levels: Array<{ id: WorkspaceLevel; label: string }> = [
@@ -218,16 +231,30 @@ function WorkspaceChrome({
   );
 }
 
-function TaskCard({ task, onToggle, onDelete }: { task: FocusTask } & TaskHandlers) {
+function TaskCard({
+  task,
+  onToggle,
+  onDelete,
+  onOpen,
+}: { task: FocusTask } & TaskHandlers) {
   return (
-    <Card className="rounded-[20px] bg-card py-0 ring-1 ring-border shadow-[0_16px_36px_-24px_rgb(0_0_0/0.32)]">
-      <CardContent className="p-[14px]">
+    <Card
+      className="relative rounded-[20px] bg-card py-0 ring-1 ring-border shadow-[0_16px_36px_-24px_rgb(0_0_0/0.32)] transition-transform duration-200 hover:-translate-y-0.5"
+    >
+      <Button
+        variant="ghost"
+        className="absolute inset-0 z-0 h-full w-full rounded-[20px] p-0 hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={() => onOpen(task.id)}
+        aria-label={`Открыть задачу: ${task.title}`}
+      />
+      <CardContent className="pointer-events-none relative z-10 p-[14px]">
         <div className="mb-2 flex items-center justify-between gap-3">
           <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-muted-foreground">
             <Sparkles className="size-3" />
             {task.meta}
           </span>
-          <DropdownMenu>
+          <div className="pointer-events-auto">
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon-xs" aria-label="Действия задачи">
                 <MoreHorizontal className="size-3.5" />
@@ -245,16 +272,19 @@ function TaskCard({ task, onToggle, onDelete }: { task: FocusTask } & TaskHandle
                 Удалить
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+            </DropdownMenu>
+          </div>
         </div>
 
         <div className="flex items-start gap-2.5">
-          <Checkbox
-            checked={task.checked}
-            onCheckedChange={(value) => onToggle(task.id, value === true)}
-            className="mt-1 size-4 rounded-full"
-            aria-label={`Завершить: ${task.title}`}
-          />
+          <div className="pointer-events-auto">
+            <Checkbox
+              checked={task.checked}
+              onCheckedChange={(value) => onToggle(task.id, value === true)}
+              className="mt-1 size-4 rounded-full"
+              aria-label={`Завершить: ${task.title}`}
+            />
+          </div>
           <p
             className={cn(
               "min-w-0 flex-1 text-lg font-semibold leading-6 tracking-[-0.025em]",
@@ -269,7 +299,12 @@ function TaskCard({ task, onToggle, onDelete }: { task: FocusTask } & TaskHandle
   );
 }
 
-function FocusLevel({ tasks, onToggle, onDelete }: { tasks: FocusTask[] } & TaskHandlers) {
+function FocusLevel({
+  tasks,
+  onToggle,
+  onDelete,
+  onOpen,
+}: { tasks: FocusTask[] } & TaskHandlers) {
   return (
     <section className="mx-auto w-full max-w-[440px] pb-40 pt-[188px] sm:pt-[124px]">
       <div className="space-y-4">
@@ -282,7 +317,13 @@ function FocusLevel({ tasks, onToggle, onDelete }: { tasks: FocusTask[] } & Task
           ) : (
             <div className="space-y-2.5">
               {tasks.map((task) => (
-                <TaskCard key={task.id} task={task} onToggle={onToggle} onDelete={onDelete} />
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onToggle={onToggle}
+                  onDelete={onDelete}
+                  onOpen={onOpen}
+                />
               ))}
             </div>
           )}
@@ -382,16 +423,21 @@ function AiDock({ onCreate, pending }: { onCreate: (title: string) => void; pend
 
 export function FocusWorkspace({
   tasks,
+  taskOptions,
   userEmail,
 }: {
   tasks: FocusTask[];
+  taskOptions: TaskFormOptions;
   userEmail?: string;
 }) {
   const [activeLevel, setActiveLevel] = useState<WorkspaceLevel>("focus");
   const [direction, setDirection] = useState(0);
   const [items, setItems] = useState<FocusTask[]>(tasks);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const reduceMotion = useReducedMotion();
+  const selectedTask =
+    items.find((task) => task.id === selectedTaskId) ?? null;
 
   // Keep local state in sync with fresh server data after revalidation.
   useEffect(() => {
@@ -433,6 +479,7 @@ export function FocusWorkspace({
     const previousIndex = items.findIndex((task) => task.id === id);
     const previous = items[previousIndex];
     setItems((prev) => prev.filter((task) => task.id !== id));
+    if (selectedTaskId === id) setSelectedTaskId(null);
     startTransition(async () => {
       const result = await deleteTask(id);
       if (result.error) {
@@ -450,14 +497,78 @@ export function FocusWorkspace({
     });
   }
 
+  function handleUpdate(id: string, patch: FocusTaskPatch) {
+    const previous = items.find((task) => task.id === id);
+    if (!previous) return;
+
+    setItems((current) =>
+      current.map((task) => (task.id === id ? { ...task, ...patch } : task)),
+    );
+
+    startTransition(async () => {
+      const result = await updateTask(id, patch);
+      if (result.error) {
+        toast.error(result.error);
+        const rollbackPatch: FocusTaskPatch = {};
+        for (const key of Object.keys(patch) as Array<keyof FocusTaskPatch>) {
+          Object.assign(rollbackPatch, { [key]: previous[key] });
+        }
+        setItems((current) =>
+          current.map((task) =>
+            task.id === id ? { ...task, ...rollbackPatch } : task,
+          ),
+        );
+      } else if (result.task) {
+        const updatedTask = result.task;
+        const confirmedPatch: FocusTaskPatch = {};
+        for (const key of Object.keys(patch) as Array<keyof FocusTaskPatch>) {
+          Object.assign(confirmedPatch, { [key]: updatedTask[key] });
+        }
+        const refreshMeta =
+          "dueDate" in patch || "priority" in patch
+            ? { meta: updatedTask.meta }
+            : {};
+        setItems((current) =>
+          current.map((task) =>
+            task.id === id
+              ? { ...task, ...confirmedPatch, ...refreshMeta }
+              : task,
+          ),
+        );
+      }
+    });
+  }
+
+  function handleDuplicate(id: string) {
+    startTransition(async () => {
+      const result = await duplicateTaskAction(id);
+      if (result.error) {
+        toast.error(result.error);
+      } else if (result.task) {
+        const copiedTask = result.task;
+        setItems((current) => [copiedTask, ...current]);
+        toast.success("Копия задачи создана");
+      }
+    });
+  }
+
   function handleCreate(title: string) {
     const optimisticId = `optimistic-${crypto.randomUUID()}`;
     const optimisticTask: FocusTask = {
       checked: false,
+      description: null,
+      dueDate: dateKey(),
+      dueTime: null,
+      estimateMinutes: null,
       id: optimisticId,
       meta: "Сегодня · без приоритета",
+      priority: "none",
+      projectId: null,
+      spaceId: taskOptions.statuses[0]?.spaceId ?? "optimistic-space",
       status: "open",
+      statusId: null,
       title,
+      type: "task",
     };
     setItems((current) => [optimisticTask, ...current]);
 
@@ -514,7 +625,12 @@ export function FocusWorkspace({
             >
               {activeLevel === "desk" ? <DeskLevel tasks={items} /> : null}
               {activeLevel === "focus" ? (
-                <FocusLevel tasks={items} onToggle={handleToggle} onDelete={handleDelete} />
+                <FocusLevel
+                  tasks={items}
+                  onToggle={handleToggle}
+                  onDelete={handleDelete}
+                  onOpen={setSelectedTaskId}
+                />
               ) : null}
               {activeLevel === "plan" ? <WeeklyPlanner tasks={items} /> : null}
             </motion.div>
@@ -523,6 +639,19 @@ export function FocusWorkspace({
       </main>
 
       <AiDock onCreate={handleCreate} pending={pending} />
+      <TaskDetailDialog
+        task={selectedTask}
+        options={taskOptions}
+        open={selectedTask !== null}
+        pending={pending}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setSelectedTaskId(null);
+        }}
+        onUpdate={handleUpdate}
+        onToggle={handleToggle}
+        onDuplicate={handleDuplicate}
+        onTrash={handleDelete}
+      />
     </div>
   );
 }

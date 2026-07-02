@@ -3,68 +3,152 @@ import { dateKey } from "@/lib/date";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 
+export type TaskPriority = Database["public"]["Enums"]["task_priority"];
+export type TaskType = Database["public"]["Enums"]["task_type"];
+
 export type FocusTask = {
-  id: string;
-  title: string;
-  meta: string;
   checked: boolean;
+  description: string | null;
+  dueDate: string | null;
+  dueTime: string | null;
+  estimateMinutes: number | null;
+  id: string;
+  meta: string;
+  priority: TaskPriority;
+  projectId: string | null;
+  spaceId: string;
   status: "open" | "done";
+  statusId: string | null;
+  title: string;
+  type: TaskType;
+};
+
+export type FocusTaskPatch = Partial<
+  Pick<
+    FocusTask,
+    | "description"
+    | "dueDate"
+    | "dueTime"
+    | "estimateMinutes"
+    | "priority"
+    | "projectId"
+    | "statusId"
+    | "title"
+    | "type"
+  >
+>;
+
+export type TaskStatusOption = {
+  color: string;
+  id: string;
+  name: string;
+  spaceId: string;
+};
+
+export type TaskProjectOption = {
+  id: string;
+  name: string;
+  spaceId: string;
+};
+
+export type TaskFormOptions = {
+  projects: TaskProjectOption[];
+  statuses: TaskStatusOption[];
 };
 
 type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
 
 const mockTodayTasks: FocusTask[] = [
-  { id: "mock-1", title: "Название задачи", meta: "Сегодня · средняя энергия", checked: false, status: "open" },
-  { id: "mock-2", title: "Название задачи", meta: "После обеда", checked: false, status: "open" },
-  { id: "mock-3", title: "Название задачи", meta: "Низкий шум", checked: false, status: "open" },
-  { id: "mock-4", title: "Закрыть день коротким обзором", meta: "Вечер", checked: false, status: "open" },
+  {
+    checked: false,
+    description: "Собрать основной сценарий и проверить его на реальных данных.",
+    dueDate: dateKey(),
+    dueTime: null,
+    estimateMinutes: 45,
+    id: "mock-1",
+    meta: "Сегодня · высокий приоритет",
+    priority: "high",
+    projectId: null,
+    spaceId: "mock-space",
+    status: "open",
+    statusId: "mock-status-work",
+    title: "Собрать первый экран карточки задачи",
+    type: "task",
+  },
+  {
+    checked: false,
+    description: null,
+    dueDate: dateKey(),
+    dueTime: "15:30:00",
+    estimateMinutes: 30,
+    id: "mock-2",
+    meta: "Сегодня · средний приоритет",
+    priority: "medium",
+    projectId: null,
+    spaceId: "mock-space",
+    status: "open",
+    statusId: null,
+    title: "Созвон по структуре продукта",
+    type: "call",
+  },
 ];
 
-function formatTaskMeta(task: TaskRow): string {
+const mockTaskOptions: TaskFormOptions = {
+  projects: [],
+  statuses: [
+    { color: "#3b82f6", id: "mock-status-work", name: "В работе", spaceId: "mock-space" },
+    { color: "#f59e0b", id: "mock-status-wait", name: "Ждёт", spaceId: "mock-space" },
+    { color: "#6b7280", id: "mock-status-pause", name: "На паузе", spaceId: "mock-space" },
+  ],
+};
+
+function priorityLabel(priority: TaskPriority): string {
+  if (priority === "low") return "низкий приоритет";
+  if (priority === "medium") return "средний приоритет";
+  if (priority === "high") return "высокий приоритет";
+  return "без приоритета";
+}
+
+function formatTaskMeta(task: Pick<TaskRow, "due_date" | "priority">): string {
   const dateLabel = task.due_date
     ? new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" })
         .format(new Date(`${task.due_date}T00:00:00`))
         .replace(" г.", "")
     : "Без даты";
-  const priorityLabel =
-    task.priority === "low"
-      ? "низкий приоритет"
-      : task.priority === "medium"
-        ? "средний приоритет"
-        : task.priority === "high"
-          ? "высокий приоритет"
-          : "без приоритета";
 
-  return `${dateLabel} · ${priorityLabel}`;
+  return `${dateLabel} · ${priorityLabel(task.priority)}`;
 }
 
 export function toFocusTask(task: TaskRow): FocusTask {
   return {
-    id: task.id,
-    title: task.title,
-    meta: formatTaskMeta(task),
     checked: task.completed_at !== null,
+    description: task.description,
+    dueDate: task.due_date,
+    dueTime: task.due_time,
+    estimateMinutes: task.estimate_minutes,
+    id: task.id,
+    meta: formatTaskMeta(task),
+    priority: task.priority,
+    projectId: task.project_id,
+    spaceId: task.space_id,
     status: task.completed_at ? "done" : "open",
+    statusId: task.status_id,
+    title: task.title,
+    type: task.type,
   };
 }
 
 export async function getTodayTasks(): Promise<FocusTask[]> {
-  // Without Supabase configured we show placeholder content.
   if (!hasSupabasePublicEnv()) {
     return mockTodayTasks;
   }
 
   const supabase = await createClient();
-
-  // The page renders a "Сегодня" list, so scope to tasks due today. New tasks
-  // created here get due_date = today, so they still appear. RLS scopes the
-  // result to the user's spaces; no client-side owner filter is required.
-  const today = dateKey();
   const { data, error } = await supabase
     .from("tasks")
     .select("*")
     .is("deleted_at", null)
-    .eq("due_date", today)
+    .eq("due_date", dateKey())
     .order("created_at", { ascending: false })
     .limit(20);
 
@@ -73,4 +157,36 @@ export async function getTodayTasks(): Promise<FocusTask[]> {
   }
 
   return (data ?? []).map(toFocusTask);
+}
+
+export async function getTaskFormOptions(): Promise<TaskFormOptions> {
+  if (!hasSupabasePublicEnv()) {
+    return mockTaskOptions;
+  }
+
+  const supabase = await createClient();
+  const [statusesResult, projectsResult] = await Promise.all([
+    supabase
+      .from("statuses")
+      .select("id, name, color, space_id")
+      .order("position", { ascending: true }),
+    supabase
+      .from("projects")
+      .select("id, name, space_id")
+      .order("name", { ascending: true }),
+  ]);
+
+  return {
+    projects: (projectsResult.data ?? []).map((project) => ({
+      id: project.id,
+      name: project.name,
+      spaceId: project.space_id,
+    })),
+    statuses: (statusesResult.data ?? []).map((status) => ({
+      color: status.color,
+      id: status.id,
+      name: status.name,
+      spaceId: status.space_id,
+    })),
+  };
 }
