@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { WeeklyPlanner } from "@/components/workspace/weekly-planner";
 import { cn } from "@/lib/utils";
 import type { FocusTask } from "@/lib/data/tasks";
 
@@ -52,22 +53,32 @@ function LeftRail() {
       className="workspace-rail fixed left-5 top-1/2 z-30 hidden -translate-y-1/2 py-8 lg:block"
       aria-label="Разделы рабочего пространства"
     >
-      <div className="workspace-rail-stack flex w-36 flex-col items-start gap-2">
+      <div className="workspace-rail-stack flex w-40 flex-col items-start gap-1">
         {railItems.map((item) => {
           const Icon = item.icon;
+          const isActive = item.label === "Фокус";
 
           return (
             <Button
               key={item.label}
-              variant={item.label === "Фокус" ? "secondary" : "ghost"}
+              variant="ghost"
               size="sm"
               className={cn(
-                "h-8 w-24 justify-start gap-2 rounded-lg border border-transparent bg-background/82 px-2.5 text-xs text-muted-foreground shadow-sm backdrop-blur-md transition-colors duration-300 hover:border-border hover:bg-background hover:text-foreground",
-                item.label === "Фокус" && "border-border bg-background text-foreground",
+                "group h-10 w-28 justify-start rounded-full border border-transparent px-3.5 text-sm backdrop-blur-md transition-colors duration-300",
+                isActive
+                  ? "border-border/80 bg-background text-foreground shadow-sm hover:bg-background"
+                  : "bg-background/10 text-muted-foreground shadow-none hover:bg-background/10 hover:text-muted-foreground",
               )}
             >
-              <Icon className="size-3.5" />
-              {item.label}
+              <span
+                className={cn(
+                  "flex items-center gap-2.5 transition-opacity duration-300",
+                  !isActive && "opacity-55 group-hover:opacity-100",
+                )}
+              >
+                <Icon className="size-4" />
+                {item.label}
+              </span>
             </Button>
           );
         })}
@@ -83,6 +94,17 @@ function WorkspaceChrome({
   activeLevel: WorkspaceLevel;
   onLevelChange: (level: WorkspaceLevel) => void;
 }) {
+  const currentDate = new Date();
+  const datePart = new Intl.DateTimeFormat("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })
+    .format(currentDate)
+    .replace(" г.", "");
+  const weekday = new Intl.DateTimeFormat("ru-RU", { weekday: "long" }).format(currentDate);
+  const dateLabel = `${datePart}, ${weekday}`;
+
   return (
     <>
       <div className="fixed left-5 top-5 z-40 flex items-center rounded-full border bg-background/92 p-1 shadow-sm backdrop-blur-xl">
@@ -136,7 +158,7 @@ function WorkspaceChrome({
       </nav>
 
       <p className="pointer-events-none fixed left-1/2 top-[145px] z-40 -translate-x-1/2 whitespace-nowrap text-xs text-muted-foreground sm:top-[84px]">
-        30 июня 2026, вторник
+        {dateLabel}
       </p>
     </>
   );
@@ -147,7 +169,7 @@ function TaskCard({ task, index }: { task: FocusTask; index: number }) {
     <Card className="rounded-[20px] bg-card py-0 ring-1 ring-border shadow-[0_16px_36px_-24px_rgb(0_0_0/0.32)]">
       <CardContent className="p-[14px]">
         <div className="mb-2 flex items-center justify-between gap-3">
-          <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-[#d96c78]">
+          <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-destructive/70">
             <Sparkles className="size-3" />
             {index === 0 ? "ЭТЕШЕН · Прототип" : "ЭТЕШЕН"}
           </span>
@@ -236,30 +258,6 @@ function DeskLevel() {
   );
 }
 
-function PlanLevel() {
-  const days = ["Пн", "Вт", "Ср", "Чт", "Пт"];
-
-  return (
-    <section className="mx-auto w-full max-w-5xl pb-40 pt-40 sm:pt-28">
-      <Card className="overflow-x-auto bg-card/92 py-0">
-        <CardContent className="grid min-h-96 min-w-[720px] grid-cols-5 divide-x p-0">
-          {days.map((day, index) => (
-            <div key={day} className="p-4">
-              <p className="text-xs text-muted-foreground">{day}</p>
-              <p className="mt-1 text-lg font-semibold">{29 + index}</p>
-              {index === 1 || index === 3 ? (
-                <div className="mt-8 rounded-lg border bg-muted/60 p-3 text-xs leading-5">
-                  {index === 1 ? "Прототип первого экрана" : "Разбор задач недели"}
-                </div>
-              ) : null}
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-    </section>
-  );
-}
-
 function AiDock() {
   return (
     <div className="fixed bottom-5 left-1/2 z-40 w-[min(372px,calc(100vw-32px))] -translate-x-1/2">
@@ -303,13 +301,13 @@ export function FocusWorkspace({ tasks }: { tasks: FocusTask[] }) {
       <div className="workspace-progressive-blur workspace-progressive-blur--top" aria-hidden="true" />
       <div className="workspace-progressive-blur workspace-progressive-blur--bottom" aria-hidden="true" />
 
-      <main className="min-h-screen px-4 sm:px-8">
-        <div className="grid min-h-screen">
+      <main className="min-h-screen min-w-0 px-4 sm:px-8">
+        <div className="grid min-h-screen min-w-0">
           <AnimatePresence initial={false} mode="sync" custom={direction}>
             <motion.div
               key={activeLevel}
               custom={direction}
-              className="col-start-1 row-start-1 min-h-screen origin-center"
+              className="col-start-1 row-start-1 min-h-screen min-w-0 origin-center"
               variants={{
                 initial: (value: number) => ({
                   opacity: 0,
@@ -334,7 +332,7 @@ export function FocusWorkspace({ tasks }: { tasks: FocusTask[] }) {
             >
               {activeLevel === "desk" ? <DeskLevel /> : null}
               {activeLevel === "focus" ? <FocusLevel tasks={tasks} /> : null}
-              {activeLevel === "plan" ? <PlanLevel /> : null}
+              {activeLevel === "plan" ? <WeeklyPlanner tasks={tasks} /> : null}
             </motion.div>
           </AnimatePresence>
         </div>
