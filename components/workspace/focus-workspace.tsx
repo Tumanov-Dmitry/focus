@@ -53,7 +53,7 @@ function LeftRail() {
       className="workspace-rail fixed left-5 top-1/2 z-30 hidden -translate-y-1/2 py-8 lg:block"
       aria-label="Разделы рабочего пространства"
     >
-      <div className="workspace-rail-stack flex w-40 flex-col items-start gap-2.5">
+      <div className="workspace-rail-stack flex w-40 flex-col items-start gap-1">
         {railItems.map((item) => {
           const Icon = item.icon;
           const isActive = item.label === "Фокус";
