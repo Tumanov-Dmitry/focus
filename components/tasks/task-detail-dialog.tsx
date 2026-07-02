@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  CalendarDays,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { TaskSchedulePicker } from "@/components/tasks/task-schedule-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -79,19 +79,6 @@ const priorityOptions: Array<{
   { className: "text-amber-600", label: "Средний", value: "medium" },
   { className: "text-red-500", label: "Высокий", value: "high" },
 ];
-
-function dateKey(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function dateFromNow(days: number): string {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  return dateKey(date);
-}
 
 function typeLabel(type: TaskType): string {
   return typeOptions.find((option) => option.value === type)?.label ?? "Задача";
@@ -404,70 +391,13 @@ export function TaskDetailDialog({
                 Планирование
               </h3>
               <div className="space-y-3">
-                <label className="block">
-                  <span className="mb-1.5 flex items-center gap-2 text-xs text-muted-foreground">
-                    <CalendarDays className="size-3.5" />
-                    Дата
-                  </span>
-                  <Input
-                    type="date"
-                    value={task.dueDate ?? ""}
-                    onChange={(event) =>
-                      onUpdate(task.id, {
-                        dueDate: event.target.value || null,
-                      })
-                    }
-                    className="bg-background"
-                  />
-                </label>
-
-                <div className="grid grid-cols-3 gap-1.5">
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    onClick={() =>
-                      onUpdate(task.id, { dueDate: dateFromNow(0) })
-                    }
-                  >
-                    Сегодня
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    onClick={() =>
-                      onUpdate(task.id, { dueDate: dateFromNow(1) })
-                    }
-                  >
-                    Завтра
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    onClick={() =>
-                      onUpdate(task.id, { dueDate: dateFromNow(7) })
-                    }
-                  >
-                    +7 дней
-                  </Button>
-                </div>
-
-                <label className="block">
-                  <span className="mb-1.5 flex items-center gap-2 text-xs text-muted-foreground">
-                    <Clock3 className="size-3.5" />
-                    Время
-                  </span>
-                  <Input
-                    type="time"
-                    value={task.dueTime?.slice(0, 5) ?? ""}
-                    disabled={!task.dueDate}
-                    onChange={(event) =>
-                      onUpdate(task.id, {
-                        dueTime: event.target.value || null,
-                      })
-                    }
-                    className="bg-background"
-                  />
-                </label>
+                <TaskSchedulePicker
+                  startDate={task.startDate}
+                  startTime={task.startTime}
+                  endDate={task.dueDate}
+                  endTime={task.dueTime}
+                  onChange={(patch) => onUpdate(task.id, patch)}
+                />
 
                 <label className="block">
                   <span className="mb-1.5 flex items-center gap-2 text-xs text-muted-foreground">

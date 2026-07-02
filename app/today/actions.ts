@@ -120,9 +120,18 @@ export async function updateTask(
   if ("projectId" in patch) update.project_id = patch.projectId;
   if ("dueDate" in patch) {
     update.due_date = patch.dueDate || null;
-    if (!patch.dueDate) update.due_time = null;
+    if (!patch.dueDate) {
+      update.due_time = null;
+      update.start_date = null;
+      update.start_time = null;
+    }
   }
   if ("dueTime" in patch) update.due_time = patch.dueTime || null;
+  if ("startDate" in patch) {
+    update.start_date = patch.startDate || null;
+    if (!patch.startDate) update.start_time = null;
+  }
+  if ("startTime" in patch) update.start_time = patch.startTime || null;
   if ("estimateMinutes" in patch) {
     const estimate = patch.estimateMinutes ?? null;
     if (

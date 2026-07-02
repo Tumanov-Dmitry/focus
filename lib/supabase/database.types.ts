@@ -294,6 +294,8 @@ export type Database = {
           project_id: string | null;
           source: Database["public"]["Enums"]["task_source"];
           space_id: string;
+          start_date: string | null;
+          start_time: string | null;
           status_id: string | null;
           title: string;
           type: Database["public"]["Enums"]["task_type"];
@@ -313,6 +315,8 @@ export type Database = {
           project_id?: string | null;
           source?: Database["public"]["Enums"]["task_source"];
           space_id: string;
+          start_date?: string | null;
+          start_time?: string | null;
           status_id?: string | null;
           title: string;
           type?: Database["public"]["Enums"]["task_type"];
@@ -332,6 +336,8 @@ export type Database = {
           project_id?: string | null;
           source?: Database["public"]["Enums"]["task_source"];
           space_id?: string;
+          start_date?: string | null;
+          start_time?: string | null;
           status_id?: string | null;
           title?: string;
           type?: Database["public"]["Enums"]["task_type"];

@@ -565,6 +565,8 @@ export function FocusWorkspace({
       priority: "none",
       projectId: null,
       spaceId: taskOptions.statuses[0]?.spaceId ?? "optimistic-space",
+      startDate: dateKey(),
+      startTime: null,
       status: "open",
       statusId: null,
       title,

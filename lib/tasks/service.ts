@@ -72,6 +72,7 @@ export async function createInboxTask(
       due_date: input.dueDate,
       source: "inbox",
       space_id: spaceId,
+      start_date: input.dueDate,
       title: input.title,
     })
     .select("*")
@@ -90,6 +91,7 @@ export async function createInboxTask(
           due_date: task.due_date,
           project_id: task.project_id,
           source: task.source,
+          start_date: task.start_date,
           title: task.title,
         },
       },
@@ -111,6 +113,8 @@ export type EditableTaskFields = Pick<
   | "estimate_minutes"
   | "priority"
   | "project_id"
+  | "start_date"
+  | "start_time"
   | "status_id"
   | "title"
   | "type"
@@ -157,7 +161,13 @@ export async function updateTaskFields(
     ? "status_changed"
     : changedKeys.includes("priority")
       ? "priority_changed"
-      : changedKeys.some((key) => key === "due_date" || key === "due_time")
+      : changedKeys.some(
+            (key) =>
+              key === "due_date" ||
+              key === "due_time" ||
+              key === "start_date" ||
+              key === "start_time",
+          )
         ? "rescheduled"
         : "updated";
 
@@ -185,6 +195,8 @@ export async function updateTaskFields(
         estimate_minutes: currentTask.estimate_minutes,
         priority: currentTask.priority,
         project_id: currentTask.project_id,
+        start_date: currentTask.start_date,
+        start_time: currentTask.start_time,
         status_id: currentTask.status_id,
         title: currentTask.title,
         type: currentTask.type,
@@ -223,6 +235,8 @@ export async function duplicateTask(
       project_id: sourceTask.project_id,
       source: "manual",
       space_id: sourceTask.space_id,
+      start_date: sourceTask.start_date,
+      start_time: sourceTask.start_time,
       status_id: sourceTask.status_id,
       title: `${sourceTask.title} — копия`,
       type: sourceTask.type,
