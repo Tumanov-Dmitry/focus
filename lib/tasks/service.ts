@@ -371,11 +371,6 @@ export async function getTaskExtras(
   comments: CommentRow[];
   links: TaskLinkRow[];
 }> {
-  const task = await getMutableTask(context, taskId);
-  if (task.deleted_at) {
-    throw new TaskServiceError("Задача находится в корзине.");
-  }
-
   const [checklistResult, linksResult, commentsResult] = await Promise.all([
     context.client
       .from("checklist_items")

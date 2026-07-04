@@ -1,7 +1,7 @@
 "use client";
 
 import { MessageSquareText, Send, Trash2 } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import {
@@ -14,6 +14,7 @@ import type { TaskComment } from "@/lib/data/tasks";
 
 type TaskCommentsProps = {
   initialComments: TaskComment[];
+  onCommentsChange?: (comments: TaskComment[]) => void;
   taskId: string;
 };
 
@@ -27,26 +28,45 @@ const commentDateFormatter = new Intl.DateTimeFormat("ru-RU", {
 
 export function TaskComments({
   initialComments,
+  onCommentsChange,
   taskId,
 }: TaskCommentsProps) {
   const [comments, setComments] = useState(initialComments);
   const [draft, setDraft] = useState("");
   const [pending, startTransition] = useTransition();
 
+  useEffect(() => {
+    onCommentsChange?.(comments);
+  }, [comments, onCommentsChange]);
+
   function addComment() {
     const body = draft.trim();
     if (!body || pending) return;
+    const previous = comments;
+    const optimisticId = `optimistic-${crypto.randomUUID()}`;
+    const optimisticComment: TaskComment = {
+      body,
+      createdAt: new Date().toISOString(),
+      id: optimisticId,
+      isOwn: true,
+    };
     setDraft("");
+    setComments([...comments, optimisticComment]);
 
     startTransition(async () => {
       const result = await createTaskCommentAction(taskId, body);
       if (result.error || !result.comment) {
         toast.error(result.error ?? "Не удалось добавить комментарий");
+        setComments(previous);
         setDraft(body);
         return;
       }
       const createdComment = result.comment;
-      setComments((current) => [...current, createdComment]);
+      setComments((current) =>
+        current.map((comment) =>
+          comment.id === optimisticId ? createdComment : comment,
+        ),
+      );
     });
   }
 
