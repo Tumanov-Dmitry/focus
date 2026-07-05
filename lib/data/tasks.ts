@@ -187,11 +187,9 @@ export async function getTodayTasks(): Promise<FocusTask[]> {
       .from("tasks")
       .select("*")
       .is("deleted_at", null)
-      .or(
-        `and(start_date.lte.${today},due_date.gte.${today}),and(start_date.is.null,due_date.eq.${today})`,
-      )
+      .order("due_date", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false })
-      .limit(50),
+      .limit(200),
     // Tasks of completed/archived projects are hidden from Focus.
     supabase.from("projects").select("id").neq("lifecycle", "active"),
   ]);
@@ -204,9 +202,24 @@ export async function getTodayTasks(): Promise<FocusTask[]> {
     (hiddenProjectsResult.data ?? []).map((project) => project.id),
   );
 
+  // Focus shows what needs attention now: open tasks that are due today,
+  // overdue, undated, or already started — plus tasks completed today.
+  // Future-scheduled tasks (start_date after today) and tasks completed on an
+  // earlier day are hidden, but nothing is silently lost.
   return (tasksResult.data ?? [])
-    .filter((task) => task.project_id === null || !hiddenProjects.has(task.project_id))
-    .slice(0, 20)
+    .filter((task) => {
+      if (task.project_id !== null && hiddenProjects.has(task.project_id)) {
+        return false;
+      }
+      if (task.start_date && task.start_date > today) {
+        return false;
+      }
+      if (task.completed_at && dateKey(new Date(task.completed_at)) < today) {
+        return false;
+      }
+      return true;
+    })
+    .slice(0, 50)
     .map(toFocusTask);
 }
 

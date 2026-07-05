@@ -21,6 +21,7 @@ import {
   Trash2,
   UsersRound,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -68,13 +69,17 @@ const levels: Array<{ id: WorkspaceLevel; label: string }> = [
   { id: "plan", label: "План" },
 ];
 
-const railItems = [
-  { label: "Фокус", icon: Target },
-  { label: "Задачи", icon: CalendarDays },
-  { label: "Проекты", icon: FolderKanban },
-  { label: "Клиенты", icon: UsersRound },
-  { label: "Аналитика", icon: BarChart3 },
-  { label: "Заметки", icon: NotebookPen },
+const railItems: Array<{
+  href: string | null;
+  icon: typeof Target;
+  label: string;
+}> = [
+  { href: "/today", icon: Target, label: "Фокус" },
+  { href: "/inbox", icon: CalendarDays, label: "Задачи" },
+  { href: "/projects", icon: FolderKanban, label: "Проекты" },
+  { href: null, icon: UsersRound, label: "Клиенты" },
+  { href: null, icon: BarChart3, label: "Аналитика" },
+  { href: "/library", icon: NotebookPen, label: "Заметки" },
 ];
 
 function LeftRail() {
@@ -88,27 +93,41 @@ function LeftRail() {
           const Icon = item.icon;
           const isActive = item.label === "Фокус";
 
+          const className = cn(
+            "group h-10 w-28 justify-start rounded-full border border-transparent px-3.5 text-sm backdrop-blur-md transition-colors duration-300",
+            isActive
+              ? "border-border/80 bg-background text-foreground shadow-sm hover:bg-background"
+              : "bg-background/10 text-muted-foreground shadow-none hover:bg-background/10 hover:text-muted-foreground",
+          );
+          const content = (
+            <span
+              className={cn(
+                "flex items-center gap-2.5 transition-opacity duration-300",
+                !isActive && "opacity-55 group-hover:opacity-100",
+              )}
+            >
+              <Icon className="size-4" />
+              {item.label}
+            </span>
+          );
+
+          if (item.href) {
+            return (
+              <Button key={item.label} asChild variant="ghost" size="sm" className={className}>
+                <Link href={item.href}>{content}</Link>
+              </Button>
+            );
+          }
+
           return (
             <Button
               key={item.label}
               variant="ghost"
               size="sm"
-              className={cn(
-                "group h-10 w-28 justify-start rounded-full border border-transparent px-3.5 text-sm backdrop-blur-md transition-colors duration-300",
-                isActive
-                  ? "border-border/80 bg-background text-foreground shadow-sm hover:bg-background"
-                  : "bg-background/10 text-muted-foreground shadow-none hover:bg-background/10 hover:text-muted-foreground",
-              )}
+              disabled
+              className={className}
             >
-              <span
-                className={cn(
-                  "flex items-center gap-2.5 transition-opacity duration-300",
-                  !isActive && "opacity-55 group-hover:opacity-100",
-                )}
-              >
-                <Icon className="size-4" />
-                {item.label}
-              </span>
+              {content}
             </Button>
           );
         })}
