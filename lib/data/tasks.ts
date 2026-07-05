@@ -182,21 +182,32 @@ export async function getTodayTasks(): Promise<FocusTask[]> {
 
   const supabase = await createClient();
   const today = dateKey();
-  const { data, error } = await supabase
-    .from("tasks")
-    .select("*")
-    .is("deleted_at", null)
-    .or(
-      `and(start_date.lte.${today},due_date.gte.${today}),and(start_date.is.null,due_date.eq.${today})`,
-    )
-    .order("created_at", { ascending: false })
-    .limit(20);
+  const [tasksResult, hiddenProjectsResult] = await Promise.all([
+    supabase
+      .from("tasks")
+      .select("*")
+      .is("deleted_at", null)
+      .or(
+        `and(start_date.lte.${today},due_date.gte.${today}),and(start_date.is.null,due_date.eq.${today})`,
+      )
+      .order("created_at", { ascending: false })
+      .limit(50),
+    // Tasks of completed/archived projects are hidden from Focus.
+    supabase.from("projects").select("id").neq("lifecycle", "active"),
+  ]);
 
-  if (error) {
+  if (tasksResult.error) {
     return [];
   }
 
-  return (data ?? []).map(toFocusTask);
+  const hiddenProjects = new Set(
+    (hiddenProjectsResult.data ?? []).map((project) => project.id),
+  );
+
+  return (tasksResult.data ?? [])
+    .filter((task) => task.project_id === null || !hiddenProjects.has(task.project_id))
+    .slice(0, 20)
+    .map(toFocusTask);
 }
 
 export async function getTaskFormOptions(): Promise<TaskFormOptions> {
@@ -209,6 +220,7 @@ export async function getTaskFormOptions(): Promise<TaskFormOptions> {
     supabase
       .from("statuses")
       .select("id, name, color, space_id")
+      .is("project_id", null)
       .order("position", { ascending: true }),
     supabase
       .from("projects")
