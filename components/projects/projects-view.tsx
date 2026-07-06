@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { createProjectAction } from "@/app/projects/actions";
+import { createProjectAction } from "@/app/(workspace)/projects/actions";
 import { ProjectDetailDialog } from "@/components/projects/project-detail-dialog";
-import { WorkspaceShell } from "@/components/workspace/workspace-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,13 +37,7 @@ function formatAmount(amount: number | null): string {
   return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(amount) + " ₽";
 }
 
-export function ProjectsView({
-  projects,
-  userEmail,
-}: {
-  projects: ProjectListItem[];
-  userEmail?: string;
-}) {
+export function ProjectsView({ projects }: { projects: ProjectListItem[] }) {
   const router = useRouter();
   const [showArchived, setShowArchived] = useState(false);
   const [draft, setDraft] = useState("");
@@ -69,7 +62,7 @@ export function ProjectsView({
   }
 
   return (
-    <WorkspaceShell userEmail={userEmail}>
+    <>
       <div className="mx-auto w-full max-w-[560px] pb-32 pt-24 sm:pt-28">
         <div className="mb-5 flex items-end justify-between gap-4 px-1">
           <div>
@@ -153,6 +146,6 @@ export function ProjectsView({
         onClose={() => setOpenId(null)}
         onChanged={() => router.refresh()}
       />
-    </WorkspaceShell>
+    </>
   );
 }

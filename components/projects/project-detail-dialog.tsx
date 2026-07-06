@@ -13,7 +13,7 @@ import {
   updateProjectAction,
   updateStatusAction,
   type ProjectPatch,
-} from "@/app/projects/actions";
+} from "@/app/(workspace)/projects/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
