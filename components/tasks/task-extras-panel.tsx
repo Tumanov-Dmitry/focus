@@ -3,7 +3,7 @@
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { loadTaskExtras } from "@/app/today/actions";
+import { loadTaskExtras } from "@/app/(workspace)/today/actions";
 import { TaskChecklist } from "@/components/tasks/task-checklist";
 import { TaskComments } from "@/components/tasks/task-comments";
 import { TaskLinks } from "@/components/tasks/task-links";

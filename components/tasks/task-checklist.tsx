@@ -16,7 +16,7 @@ import {
   deleteChecklistItemAction,
   reorderChecklistAction,
   toggleChecklistItemAction,
-} from "@/app/today/actions";
+} from "@/app/(workspace)/today/actions";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";

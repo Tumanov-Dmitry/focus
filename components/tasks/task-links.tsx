@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import {
   createTaskLinkAction,
   deleteTaskLinkAction,
-} from "@/app/today/actions";
+} from "@/app/(workspace)/today/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { TaskLink } from "@/lib/data/tasks";

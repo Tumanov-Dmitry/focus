@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import {
   createTaskCommentAction,
   deleteTaskCommentAction,
-} from "@/app/today/actions";
+} from "@/app/(workspace)/today/actions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { TaskComment } from "@/lib/data/tasks";
