@@ -465,6 +465,8 @@ export function FocusWorkspace({
 
   return (
     <>
+      <div className="workspace-progressive-blur workspace-progressive-blur--top" aria-hidden="true" />
+      <div className="workspace-progressive-blur workspace-progressive-blur--bottom" aria-hidden="true" />
       <WorkspaceChrome activeLevel={activeLevel} onLevelChange={selectLevel} />
 
       <div className="grid min-h-screen min-w-0">
