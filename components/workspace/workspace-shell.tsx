@@ -163,9 +163,6 @@ export function WorkspaceShell({
 
       <LeftRail />
 
-      <div className="workspace-progressive-blur workspace-progressive-blur--top" aria-hidden="true" />
-      <div className="workspace-progressive-blur workspace-progressive-blur--bottom" aria-hidden="true" />
-
       <main className="min-h-screen min-w-0 px-4 sm:px-8">{children}</main>
     </div>
   );
