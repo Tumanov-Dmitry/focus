@@ -193,16 +193,11 @@
   }
 
   .workspace-rail-stack {
+    /* Constant resting tilt — no hover/focus flatten, so navigating between
+       sections never re-tilts the rail (seamless, no jump). */
     transform: translate3d(0, 0, 0px) rotateY(30deg) scale(1);
     transform-origin: left center;
     transform-style: preserve-3d;
-    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-    will-change: transform;
-  }
-
-  .workspace-rail:hover .workspace-rail-stack,
-  .workspace-rail:focus-within .workspace-rail-stack {
-    transform: translate3d(0, 0, 0) rotateY(0deg) scale(1);
   }
 
   .workspace-progressive-blur {
