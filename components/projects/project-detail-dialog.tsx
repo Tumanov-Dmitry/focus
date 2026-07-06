@@ -164,7 +164,13 @@ export function ProjectDetailDialog({
 
   return (
     <Dialog open={projectId !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent
+        className="max-h-[85vh] overflow-y-auto sm:max-w-2xl"
+        // Native <select>/<input type="date"> open browser overlays that Radix
+        // treats as an outside click and would close the dialog. Keep it open;
+        // the X button and Escape still close it.
+        onInteractOutside={(event) => event.preventDefault()}
+      >
         {loading || !detail ? (
           <div className="flex h-40 items-center justify-center text-muted-foreground">
             <Loader2 className="size-5 animate-spin" />
