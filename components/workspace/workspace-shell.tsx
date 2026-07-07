@@ -134,7 +134,10 @@ export function WorkspaceShell({
   userEmail?: string;
 }) {
   return (
-    <div className="workspace-theme relative min-h-screen overflow-x-hidden text-foreground">
+    <div
+      id="workspace-root"
+      className="workspace-theme relative min-h-screen overflow-x-hidden text-foreground"
+    >
       <div className="fixed left-5 top-5 z-40 flex items-center rounded-full border bg-background/92 p-1 shadow-sm backdrop-blur-xl">
         <ProfileMenu userEmail={userEmail} />
         <Button variant="ghost" size="icon-lg" className="rounded-full" aria-label="Открыть меню">
