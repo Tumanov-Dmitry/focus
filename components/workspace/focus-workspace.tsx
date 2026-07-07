@@ -11,6 +11,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
 import {
@@ -310,6 +311,7 @@ export function FocusWorkspace({
   const [items, setItems] = useState<FocusTask[]>(tasks);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const reduceMotion = useReducedMotion();
   const selectedTask =
     items.find((task) => task.id === selectedTaskId) ?? null;
@@ -318,6 +320,12 @@ export function FocusWorkspace({
   useEffect(() => {
     setItems(tasks);
   }, [tasks]);
+
+  // Render the fixed chrome outside the sliding page wrapper (into the shell)
+  // so the section slide transform never drags or mis-positions them.
+  useEffect(() => {
+    setPortalTarget(document.getElementById("workspace-root"));
+  }, []);
 
   function selectLevel(nextLevel: WorkspaceLevel) {
     if (nextLevel === activeLevel) return;
@@ -465,9 +473,17 @@ export function FocusWorkspace({
 
   return (
     <>
-      <div className="workspace-progressive-blur workspace-progressive-blur--top" aria-hidden="true" />
-      <div className="workspace-progressive-blur workspace-progressive-blur--bottom" aria-hidden="true" />
-      <WorkspaceChrome activeLevel={activeLevel} onLevelChange={selectLevel} />
+      {portalTarget
+        ? createPortal(
+            <>
+              <div className="workspace-progressive-blur workspace-progressive-blur--top" aria-hidden="true" />
+              <div className="workspace-progressive-blur workspace-progressive-blur--bottom" aria-hidden="true" />
+              <WorkspaceChrome activeLevel={activeLevel} onLevelChange={selectLevel} />
+              <AiDock onCreate={handleCreate} pending={pending} />
+            </>,
+            portalTarget,
+          )
+        : null}
 
       <div className="grid min-h-screen min-w-0">
           <AnimatePresence initial={false} mode="sync" custom={direction}>
@@ -511,7 +527,6 @@ export function FocusWorkspace({
           </AnimatePresence>
       </div>
 
-      <AiDock onCreate={handleCreate} pending={pending} />
       <TaskDetailDialog
         task={selectedTask}
         options={taskOptions}

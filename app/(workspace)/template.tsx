@@ -1,19 +1,38 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { useState } from "react";
 
-// Soft cross-fade between sections while the shell (rail, chrome) stays put.
-// Opacity only — transform/filter would establish a containing block and break
-// the fixed-positioned elements on /today (level switcher, date, AI dock).
+// Order matches the left rail, so the slide direction follows the menu: moving
+// to a lower item slides the content up, to a higher item slides it down.
+const RAIL_ORDER: Record<string, number> = {
+  "/today": 0,
+  "/inbox": 1,
+  "/projects": 2,
+  "/library": 3,
+};
+
+let previousIndex = 0;
+
 export default function WorkspaceTemplate({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const reduceMotion = useReducedMotion();
+
+  // Templates remount per navigation, so this runs once each transition.
+  const [direction] = useState(() => {
+    const index = RAIL_ORDER[pathname] ?? previousIndex;
+    const value = index >= previousIndex ? 1 : -1;
+    previousIndex = index;
+    return value;
+  });
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: reduceMotion ? 0.01 : 0.32, ease: [0.22, 1, 0.36, 1] }}
+      initial={{ opacity: 0, y: reduceMotion ? 0 : direction * 28 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: reduceMotion ? 0.01 : 0.4, ease: [0.22, 1, 0.36, 1] }}
     >
       {children}
     </motion.div>
