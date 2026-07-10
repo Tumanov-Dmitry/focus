@@ -1,4 +1,5 @@
 import { FocusWorkspace } from "@/components/workspace/focus-workspace";
+import { isAiEnabled } from "@/lib/ai/shared";
 import { getTaskFormOptions, getTodayTasks } from "@/lib/data/tasks";
 
 export default async function TodayPage() {
@@ -7,5 +8,11 @@ export default async function TodayPage() {
     getTaskFormOptions(),
   ]);
 
-  return <FocusWorkspace tasks={tasks} taskOptions={taskOptions} />;
+  return (
+    <FocusWorkspace
+      tasks={tasks}
+      taskOptions={taskOptions}
+      aiEnabled={isAiEnabled()}
+    />
+  );
 }

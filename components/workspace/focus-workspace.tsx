@@ -15,12 +15,20 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
 import {
+  acceptSuggestions,
+  suggestTasksFromText,
+} from "@/app/(workspace)/inbox/ai-actions";
+import {
   createTask,
   deleteTask,
   duplicateTaskAction,
   setTaskDone,
   updateTask,
 } from "@/app/(workspace)/today/actions";
+import {
+  TaskSuggestions,
+  TaskSuggestionsSkeleton,
+} from "@/components/ai/task-suggestions";
 import { TaskDetailDialog } from "@/components/tasks/task-detail-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,6 +43,7 @@ import { Input } from "@/components/ui/input";
 import { WeeklyPlanner } from "@/components/workspace/weekly-planner";
 import { dateKey } from "@/lib/date";
 import { cn } from "@/lib/utils";
+import type { ParsedTask } from "@/lib/ai/parse-inbox";
 import type {
   FocusTask,
   FocusTaskPatch,
@@ -254,8 +263,23 @@ function pluralizeTasks(count: number): string {
   return `${count} ${word}`;
 }
 
-function AiDock({ onCreate, pending }: { onCreate: (title: string) => void; pending: boolean }) {
+const MIN_PARSE_LENGTH = 15;
+
+function AiDock({
+  aiEnabled,
+  onCreate,
+  onParse,
+  parsing,
+  pending,
+}: {
+  aiEnabled: boolean;
+  onCreate: (title: string) => void;
+  onParse: (text: string) => void;
+  parsing: boolean;
+  pending: boolean;
+}) {
   const [draft, setDraft] = useState("");
+  const canParse = aiEnabled && draft.trim().length > MIN_PARSE_LENGTH;
 
   function submit() {
     const title = draft.trim();
@@ -265,9 +289,9 @@ function AiDock({ onCreate, pending }: { onCreate: (title: string) => void; pend
   }
 
   return (
-    <div className="fixed bottom-5 left-1/2 z-40 w-[min(372px,calc(100vw-32px))] -translate-x-1/2">
-      <Card className="rounded-[20px] bg-background/98 py-0 ring-1 ring-border shadow-[0_22px_64px_-24px_rgb(0_0_0/0.32)] backdrop-blur-2xl">
-        <CardContent className="flex items-center gap-1 p-1">
+    <Card className="rounded-[20px] bg-background/98 py-0 ring-1 ring-border shadow-[0_22px_64px_-24px_rgb(0_0_0/0.32)] backdrop-blur-2xl">
+      <CardContent className="flex flex-col gap-1 p-1">
+        <div className="flex items-center gap-1">
           <Input
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
@@ -293,16 +317,30 @@ function AiDock({ onCreate, pending }: { onCreate: (title: string) => void; pend
           >
             <ArrowUp className="size-[18px]" />
           </Button>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+        {canParse ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-full justify-start gap-2 rounded-2xl px-3 text-muted-foreground"
+            onClick={() => onParse(draft.trim())}
+            disabled={parsing}
+          >
+            <Sparkles className="size-4" />
+            {parsing ? "Разбираю…" : "Разобрать с ИИ"}
+          </Button>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
 
 export function FocusWorkspace({
+  aiEnabled = false,
   tasks,
   taskOptions,
 }: {
+  aiEnabled?: boolean;
   tasks: FocusTask[];
   taskOptions: TaskFormOptions;
 }) {
@@ -312,6 +350,8 @@ export function FocusWorkspace({
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+  const [suggestions, setSuggestions] = useState<ParsedTask[] | null>(null);
+  const [parsing, setParsing] = useState(false);
   const reduceMotion = useReducedMotion();
   const selectedTask =
     items.find((task) => task.id === selectedTaskId) ?? null;
@@ -471,6 +511,43 @@ export function FocusWorkspace({
     });
   }
 
+  async function handleParse(text: string) {
+    setSuggestions(null);
+    setParsing(true);
+    try {
+      const result = await suggestTasksFromText(text);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      if (result.suggestions.length === 0) {
+        toast("ИИ не нашёл задач в этом тексте");
+        return;
+      }
+      setSuggestions(result.suggestions);
+    } finally {
+      setParsing(false);
+    }
+  }
+
+  function handleAcceptSuggestions(chosen: ParsedTask[]) {
+    startTransition(async () => {
+      const result = await acceptSuggestions(chosen);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      if (result.created.length > 0) {
+        setItems((current) => [...result.created, ...current]);
+        toast.success(`Создано ${pluralizeTasks(result.created.length)}`);
+      }
+      if (result.failed.length > 0) {
+        toast.error(`Не удалось создать: ${pluralizeTasks(result.failed.length)}`);
+      }
+      setSuggestions(null);
+    });
+  }
+
   return (
     <>
       {portalTarget
@@ -479,7 +556,26 @@ export function FocusWorkspace({
               <div className="workspace-progressive-blur workspace-progressive-blur--top" aria-hidden="true" />
               <div className="workspace-progressive-blur workspace-progressive-blur--bottom" aria-hidden="true" />
               <WorkspaceChrome activeLevel={activeLevel} onLevelChange={selectLevel} />
-              <AiDock onCreate={handleCreate} pending={pending} />
+              <div className="fixed bottom-5 left-1/2 z-40 flex w-[min(392px,calc(100vw-32px))] -translate-x-1/2 flex-col gap-2">
+                {parsing ? (
+                  <TaskSuggestionsSkeleton />
+                ) : suggestions ? (
+                  <TaskSuggestions
+                    suggestions={suggestions}
+                    projects={taskOptions.projects}
+                    pending={pending}
+                    onCreate={handleAcceptSuggestions}
+                    onCancel={() => setSuggestions(null)}
+                  />
+                ) : null}
+                <AiDock
+                  aiEnabled={aiEnabled}
+                  onCreate={handleCreate}
+                  onParse={handleParse}
+                  parsing={parsing}
+                  pending={pending}
+                />
+              </div>
             </>,
             portalTarget,
           )
