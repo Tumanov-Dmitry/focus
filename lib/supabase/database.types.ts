@@ -551,7 +551,7 @@ export type Database = {
       space_kind: "personal" | "team"
       space_role: "owner" | "member"
       task_priority: "none" | "low" | "medium" | "high"
-      task_source: "manual" | "inbox"
+      task_source: "manual" | "inbox" | "ai"
       task_type: "task" | "call" | "meeting"
       time_entry_source: "timer" | "manual"
     }
@@ -700,7 +700,7 @@ export const Constants = {
       space_kind: ["personal", "team"],
       space_role: ["owner", "member"],
       task_priority: ["none", "low", "medium", "high"],
-      task_source: ["manual", "inbox"],
+      task_source: ["manual", "inbox", "ai"],
       task_type: ["task", "call", "meeting"],
       time_entry_source: ["timer", "manual"],
     },

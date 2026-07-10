@@ -9,6 +9,7 @@ type ChecklistRow = Database["public"]["Tables"]["checklist_items"]["Row"];
 type CommentRow = Database["public"]["Tables"]["comments"]["Row"];
 type TaskLinkRow = Database["public"]["Tables"]["task_links"]["Row"];
 type ActivityAction = Database["public"]["Enums"]["activity_action"];
+type TaskSource = Database["public"]["Enums"]["task_source"];
 
 type TaskMutationContext = {
   client: FocusSupabaseClient;
@@ -65,17 +66,18 @@ async function writeActivity(
 
 export async function createInboxTask(
   context: TaskMutationContext,
-  input: { dueDate: string; title: string },
+  input: { dueDate?: string | null; source?: TaskSource; title: string },
 ): Promise<TaskRow> {
   const spaceId = await getPersonalSpaceId(context.client, context.userId);
+  const dueDate = input.dueDate ?? null;
   const { data: task, error } = await context.client
     .from("tasks")
     .insert({
       created_by: context.userId,
-      due_date: input.dueDate,
-      source: "inbox",
+      due_date: dueDate,
+      source: input.source ?? "inbox",
       space_id: spaceId,
-      start_date: input.dueDate,
+      start_date: dueDate,
       title: input.title,
     })
     .select("*")
