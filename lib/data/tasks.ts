@@ -261,6 +261,7 @@ export async function getTaskFormOptions(): Promise<TaskFormOptions> {
     supabase
       .from("statuses")
       .select("id, name, color, space_id")
+      .eq("context", "task")
       .is("project_id", null)
       .order("position", { ascending: true }),
     supabase
