@@ -1,10 +1,11 @@
-import { ShellPlaceholder } from "@/components/workspace/shell-page";
+import { TasksView } from "@/components/tasks/tasks-view";
+import { getAllTasks, getTaskFormOptions } from "@/lib/data/tasks";
 
-export default function Page() {
-  return (
-    <ShellPlaceholder
-      title="Задачи"
-      description="Скоро здесь появится полный список задач с фильтрами и бэклогом."
-    />
-  );
+export default async function TasksPage() {
+  const [tasks, taskOptions] = await Promise.all([
+    getAllTasks(),
+    getTaskFormOptions(),
+  ]);
+
+  return <TasksView tasks={tasks} taskOptions={taskOptions} />;
 }

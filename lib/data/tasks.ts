@@ -223,6 +223,34 @@ export async function getTodayTasks(): Promise<FocusTask[]> {
     .map(toFocusTask);
 }
 
+/**
+ * Полная база задач для раздела «Задачи»: все активные (не в корзине и не
+ * завершённые) задачи личного пространства, без ограничения «сегодня».
+ * Завершённые живут в Журнале, поэтому здесь их нет. Группировки и фильтр
+ * «Бэклог» (задачи без дат) — на стороне представления.
+ */
+export async function getAllTasks(): Promise<FocusTask[]> {
+  if (!hasSupabasePublicEnv()) {
+    return mockTodayTasks;
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("*")
+    .is("deleted_at", null)
+    .is("completed_at", null)
+    .order("due_date", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  if (error) {
+    return [];
+  }
+
+  return (data ?? []).map(toFocusTask);
+}
+
 export async function getTaskFormOptions(): Promise<TaskFormOptions> {
   if (!hasSupabasePublicEnv()) {
     return mockTaskOptions;
