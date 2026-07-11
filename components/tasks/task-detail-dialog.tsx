@@ -162,6 +162,11 @@ export function TaskDetailDialog({
       <DialogContent
         className="max-h-[min(880px,calc(100vh-24px))] gap-0 overflow-hidden rounded-[28px] p-0 sm:max-w-[880px]"
         overlayClassName="bg-black/20 backdrop-blur-md"
+        // Внутренние выпадашки (Radix DropdownMenu) рендерятся в портал вне
+        // диалога, поэтому клик, закрывающий список, Radix считает кликом
+        // снаружи и закрыл бы весь диалог. Гасим close-on-outside; X и Escape
+        // по-прежнему закрывают.
+        onInteractOutside={(event) => event.preventDefault()}
       >
         <DialogHeader className="border-b px-6 pb-5 pt-6 pr-16 sm:px-8 sm:pt-8">
           <DialogTitle className="sr-only">Карточка задачи</DialogTitle>
